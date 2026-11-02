@@ -12,6 +12,7 @@ import requests
 
 import vidssave
 import ytdlp_engine
+from proxy_manager import proxy_pool
 
 # --- In-Memory Ring Buffer Logging ---
 class RingBufferLogHandler(logging.Handler):
@@ -126,6 +127,7 @@ def get_logs(limit: int = Query(50, ge=1, le=250), level: Optional[str] = Query(
             "domain": vidssave.creds_manager.domain,
             "last_refresh": int(time.time() - vidssave.creds_manager.last_refresh) if vidssave.creds_manager.last_refresh else "never"
         },
+        "proxies_count": len(proxy_pool.get_all()),
         "count": len(entries),
         "logs": entries
     }
@@ -179,10 +181,10 @@ def logs_dashboard():
         
         document.getElementById('stats').innerHTML = `
           <span class="badge">Uptime: <b>${data.uptime_seconds}s</b></span>
-          <span class="badge">Total Requests: <b>${data.stats.total}</b></span>
+          <span class="badge">Proxies: <b style="color:#38bdf8;">${data.proxies_count || 0} active</b></span>
+          <span class="badge">Total: <b>${data.stats.total}</b></span>
           <span class="badge">Success: <b style="color:#4ade80;">${data.stats.success}</b></span>
           <span class="badge">Errors: <b style="color:#f87171;">${data.stats.errors}</b></span>
-          <span class="badge">Auth: <b>${data.credentials.auth}</b></span>
         `;
 
         const box = document.getElementById('logsBox');

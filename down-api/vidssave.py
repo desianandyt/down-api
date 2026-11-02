@@ -8,11 +8,9 @@ import urllib.parse
 from typing import Any, Dict, List, Optional
 from Crypto.Cipher import AES
 import requests
+from proxy_manager import proxy_pool
 
 logger = logging.getLogger("vidssave")
-
-PROXY_URL = os.environ.get("PROXY_URL") or os.environ.get("HTTP_PROXY")
-PROXIES = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else None
 
 DEFAULT_KEYS = ["4c9b7d2e" * 3 + "4c9b7d21", "rz18efAXUbdiaO7k"]
 DEFAULT_AUTH_CODE = "4c9b7d21"
@@ -66,7 +64,7 @@ class CredentialsManager:
 
         logger.info("Fetching fresh credentials from vidssave.com...")
         try:
-            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, proxies=PROXIES, timeout=6)
+            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, proxies=proxy_pool.get_dict(), timeout=6)
             if r.status_code != 200:
                 logger.warning(f"Could not load homepage: HTTP {r.status_code}")
                 return
@@ -147,25 +145,28 @@ def _execute_parse(url: str) -> Dict[str, Any]:
     }
 
     last_error = None
-    for ep in ENDPOINTS:
-        parse_url = f"{ep['api_base']}/media/parse"
-        try:
-            resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, proxies=PROXIES, timeout=4)
-            if resp.status_code != 200:
-                continue
-            res_json = resp.json()
-            if res_json.get("status") == 1:
-                data_field = res_json.get("data")
-                if isinstance(data_field, str):
-                    return decrypt_payload(data_field)
-                return data_field
-            else:
-                last_error = res_json.get("status_code") or res_json.get("msg") or "parse_failed"
-                # If Cloudflare WAF risk check triggered, stop wasting time on other endpoints
-                if last_error == "analyze_risk":
-                    break
-        except Exception as e:
-            last_error = str(e)
+    num_proxies = max(1, len(proxy_pool.get_all()))
+    # Try up to 3 different rotating proxies
+    for _ in range(min(3, num_proxies)):
+        proxies = proxy_pool.get_dict()
+        for ep in ENDPOINTS:
+            parse_url = f"{ep['api_base']}/media/parse"
+            try:
+                resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=5)
+                if resp.status_code != 200:
+                    continue
+                res_json = resp.json()
+                if res_json.get("status") == 1:
+                    data_field = res_json.get("data")
+                    if isinstance(data_field, str):
+                        return decrypt_payload(data_field)
+                    return data_field
+                else:
+                    last_error = res_json.get("status_code") or res_json.get("msg") or "parse_failed"
+                    if last_error == "analyze_risk":
+                        break
+            except Exception as e:
+                last_error = str(e)
 
     raise ValueError(f"VidsSave API error: {last_error}")
 
@@ -178,8 +179,6 @@ def parse_media(url: str) -> Dict[str, Any]:
         return _execute_parse(url)
     except Exception as e:
         err_str = str(e)
-        if "analyze_risk" in err_str:
-            raise
         logger.warning(f"VidsSave parse error ({err_str}), refreshing creds...")
         creds_manager.refresh()
         return _execute_parse(url)
@@ -196,10 +195,11 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     if output_format:
         payload["output"] = output_format
 
+    proxies = proxy_pool.get_dict()
     for ep in ENDPOINTS:
         download_url = f"{ep['api_base']}/media/download"
         try:
-            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=PROXIES, timeout=5)
+            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=5)
             if resp.status_code != 200:
                 continue
             res_json = resp.json()
@@ -227,7 +227,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
                 "Referer": DEFAULT_HEADERS["Referer"]
             }
 
-            with requests.get(sse_url, headers=sse_headers, proxies=PROXIES, stream=True, timeout=timeout) as sse_resp:
+            with requests.get(sse_url, headers=sse_headers, proxies=proxies, stream=True, timeout=timeout) as sse_resp:
                 for line in sse_resp.iter_lines():
                     if not line:
                         continue
@@ -242,6 +242,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
                                     head_resp = requests.get(
                                         redirect_link,
                                         headers={"User-Agent": DEFAULT_HEADERS["User-Agent"]},
+                                        proxies=proxies,
                                         allow_redirects=False,
                                         timeout=6
                                     )

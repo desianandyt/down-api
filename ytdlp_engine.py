@@ -3,9 +3,9 @@ import logging
 from typing import Any, Dict, Optional
 import yt_dlp
 
-logger = logging.getLogger("ytdlp_engine")
+from proxy_manager import proxy_pool
 
-PROXY_URL = os.environ.get("PROXY_URL") or os.environ.get("HTTP_PROXY")
+logger = logging.getLogger("ytdlp_engine")
 
 
 def get_ytdlp_info(url: str) -> Dict[str, Any]:
@@ -21,8 +21,9 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
             }
         }
     }
-    if PROXY_URL:
-        ydl_opts["proxy"] = PROXY_URL
+    proxy = proxy_pool.get_proxy()
+    if proxy:
+        ydl_opts["proxy"] = proxy
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
