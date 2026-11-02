@@ -1,8 +1,11 @@
+import os
 import logging
 from typing import Any, Dict, Optional
 import yt_dlp
 
 logger = logging.getLogger("ytdlp_engine")
+
+PROXY_URL = os.environ.get("PROXY_URL") or os.environ.get("HTTP_PROXY")
 
 
 def get_ytdlp_info(url: str) -> Dict[str, Any]:
@@ -14,11 +17,13 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         "socket_timeout": 12,
         "extractor_args": {
             "youtube": {
-                "player_client": ["tv_embedded", "mweb", "android"],
-                "player_skip": ["configs", "webpage"]
+                "player_client": ["tv_embedded", "android_embedded", "android"]
             }
         }
     }
+    if PROXY_URL:
+        ydl_opts["proxy"] = PROXY_URL
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         return ydl.sanitize_info(info)
