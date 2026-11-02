@@ -40,6 +40,33 @@ class DownloadRequest(BaseModel):
     format: Optional[str] = None
 
 
+@app.get("/api/debug")
+def debug():
+    import requests
+    try:
+        ip_info = requests.get("https://api.ipify.org?format=json", timeout=5).json()
+    except Exception as e:
+        ip_info = {"error": str(e)}
+
+    test_payload = {
+        "hostname": "vidssave.com",
+        "auth": vidssave.AUTH_CODE,
+        "domain": vidssave.DOMAIN,
+        "origin": "source",
+        "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    }
+    try:
+        r = requests.post(f"{vidssave.API_BASE}/api/contentsite_api/media/parse", data=test_payload, headers=vidssave.DEFAULT_HEADERS, timeout=10)
+        vs_res = {"status_code": r.status_code, "text": r.text, "headers": dict(r.headers)}
+    except Exception as e:
+        vs_res = {"error": str(e)}
+
+    return {
+        "render_ip": ip_info,
+        "vidssave_response": vs_res
+    }
+
+
 @app.get("/")
 def home():
     return {

@@ -11,6 +11,11 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         "quiet": True,
         "no_warnings": True,
         "extract_flat": False,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["ios", "android", "web", "mweb"]
+            }
+        }
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
