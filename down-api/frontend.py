@@ -4,110 +4,136 @@ def get_downloader_html() -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚡ AnyDownloader — Universal High-Speed Video & Audio Downloader</title>
-  <meta name="description" content="Download videos and music from YouTube, Shorts, Instagram Reels, TikTok, Facebook, and Twitter in 1080p, 720p, MP4, and MP3.">
+  <title>VORTEX // Next-Gen Media Downloader & Stream Engine</title>
+  <meta name="description" content="Ultra-fast, studio-grade universal video and audio downloader for YouTube, Shorts, Instagram Reels, TikTok, and Twitter.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #111827;
-      --card-border: #1f293d;
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.35);
-      --accent-hover: #0284c7;
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-      --success: #10b981;
-      --danger: #ef4444;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --bg-base: #06090f;
+      --bg-surface: #0e1422;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(6, 182, 212, 0.6);
+      
+      --cyan-neon: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.35);
+      --emerald-neon: #10b981;
+      --indigo-neon: #6366f1;
+      --violet-neon: #8b5cf6;
+      
+      --text-title: #ffffff;
+      --text-body: #cbd5e1;
+      --text-muted: #64748b;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: var(--bg);
-      color: var(--text-main);
-      font-family: var(--font);
+      background-color: var(--bg-base);
+      color: var(--text-body);
+      font-family: var(--font-stack);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
+      position: relative;
     }
 
-    /* Ambient Glow background */
-    .glow-bg {
+    /* Ambient Spatial Lights */
+    .ambient-mesh {
       position: fixed;
       top: 0;
       left: 50%;
       transform: translateX(-50%);
-      width: 1000px;
-      height: 450px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 80%);
+      width: 1200px;
+      height: 600px;
+      background: radial-gradient(circle at 50% 20%, rgba(6, 182, 212, 0.16) 0%, rgba(99, 102, 241, 0.1) 40%, transparent 75%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .grid-lines {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
       z-index: 0;
       pointer-events: none;
     }
 
-    /* Navbar */
+    /* Top Navigation Bar */
     header {
       position: relative;
-      z-index: 10;
+      z-index: 20;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      background: rgba(11, 15, 25, 0.7);
-      backdrop-filter: blur(12px);
+      padding: 18px 28px;
+      background: rgba(6, 9, 15, 0.75);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
     }
-    .logo {
+    .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 20px;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #06b6d4, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+    }
+    .brand-title {
+      font-size: 19px;
       font-weight: 800;
       color: #fff;
-      text-decoration: none;
       letter-spacing: -0.5px;
-    }
-    .logo-badge {
-      background: linear-gradient(135deg, #38bdf8, #6366f1);
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      color: #fff;
-      font-weight: 700;
-    }
-    .nav-links {
       display: flex;
-      gap: 12px;
       align-items: center;
+      gap: 8px;
     }
-    .nav-link {
-      color: var(--text-sub);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: all 0.2s;
+    .brand-badge {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--cyan-neon);
+      letter-spacing: 0.5px;
     }
-    .nav-link:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.05);
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .live-status {
+    .status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       font-size: 12px;
+      font-weight: 600;
       color: #34d399;
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 5px 12px;
       border-radius: 20px;
     }
-    .status-dot {
-      width: 7px;
-      height: 7px;
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: #10b981;
       box-shadow: 0 0 8px #10b981;
@@ -115,7 +141,20 @@ def get_downloader_html() -> str:
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+    .nav-btn {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
     }
 
     /* Main Container */
@@ -123,55 +162,75 @@ def get_downloader_html() -> str:
       position: relative;
       z-index: 10;
       flex: 1;
-      max-width: 860px;
+      max-width: 900px;
       width: 100%;
       margin: 0 auto;
-      padding: 40px 20px;
+      padding: 50px 20px 80px;
     }
 
-    /* Hero Section */
-    .hero {
+    /* Hero Header */
+    .hero-box {
       text-align: center;
       margin-bottom: 35px;
     }
-    .hero h1 {
-      font-size: 38px;
+    .hero-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--cyan-neon);
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      padding: 4px 14px;
+      border-radius: 30px;
+      margin-bottom: 16px;
+    }
+    .hero-box h1 {
+      font-size: 44px;
       font-weight: 900;
-      line-height: 1.2;
-      letter-spacing: -1px;
+      line-height: 1.15;
+      letter-spacing: -1.2px;
+      color: #fff;
       margin-bottom: 12px;
-      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+    }
+    .hero-box h1 span {
+      background: linear-gradient(135deg, #06b6d4 0%, #a855f7 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .hero p {
-      color: var(--text-sub);
+    .hero-box p {
+      color: var(--text-muted);
       font-size: 16px;
-      max-width: 550px;
+      max-width: 580px;
       margin: 0 auto;
+      line-height: 1.5;
     }
 
-    /* Input Box Card */
-    .input-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 8px;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+    /* Premium Search Bar */
+    .search-wrapper {
+      position: relative;
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 10px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 25px rgba(6, 182, 212, 0.15);
+      backdrop-filter: blur(20px);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .input-card:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 35px var(--accent-glow);
+    .search-wrapper:focus-within {
+      border-color: var(--cyan-neon);
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 35px var(--cyan-glow);
     }
-    .input-group {
+    .search-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      position: relative;
     }
-    .input-icon {
-      padding-left: 14px;
+    .url-icon {
+      padding-left: 12px;
       color: #64748b;
       display: flex;
       align-items: center;
@@ -183,395 +242,519 @@ def get_downloader_html() -> str:
       outline: none;
       font-size: 16px;
       color: #fff;
-      padding: 14px 6px;
-      width: 100%;
+      padding: 12px 6px;
+      font-family: inherit;
     }
     .url-input::placeholder {
       color: #475569;
     }
-    .btn-paste {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #cbd5e1;
-      padding: 8px 12px;
+    .btn-icon-action {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: #94a3b8;
+      padding: 8px 14px;
       border-radius: 10px;
       font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       transition: all 0.2s;
     }
-    .btn-paste:hover {
-      background: rgba(255, 255, 255, 0.15);
+    .btn-icon-action:hover {
+      background: rgba(255, 255, 255, 0.12);
       color: #fff;
     }
-    .btn-submit {
-      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+    .btn-main-fetch {
+      background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #6366f1 100%);
       color: #fff;
       border: none;
-      padding: 14px 26px;
+      padding: 14px 30px;
       font-size: 15px;
-      font-weight: 700;
-      border-radius: 12px;
+      font-weight: 800;
+      border-radius: 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
-      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+      transition: all 0.25s;
       white-space: nowrap;
     }
-    .btn-submit:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+    .btn-main-fetch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.6);
       filter: brightness(1.1);
     }
-    .btn-submit:active {
+    .btn-main-fetch:active {
       transform: translateY(1px);
     }
-    .btn-submit:disabled {
-      opacity: 0.6;
+    .btn-main-fetch:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
       transform: none;
     }
 
-    /* Platform Pills */
-    .platforms {
+    /* Platform Pills Bar */
+    .platform-row {
       display: flex;
       justify-content: center;
       gap: 10px;
-      flex-wrap: wrap;
       margin-top: 20px;
+      flex-wrap: wrap;
     }
-    .platform-pill {
+    .platform-tag {
+      font-size: 12px;
+      color: #64748b;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      color: var(--text-sub);
       transition: all 0.2s;
     }
-    .platform-pill:hover {
-      background: rgba(255, 255, 255, 0.07);
-      color: #fff;
+    .platform-tag:hover {
+      color: var(--text-body);
       border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
     }
 
-    /* Loading Spinner */
-    .loading-container {
+    /* Loading State */
+    .loader-box {
       display: none;
       text-align: center;
-      padding: 40px 0;
+      padding: 45px 0;
     }
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(56, 189, 248, 0.15);
-      border-top-color: var(--accent);
+    .loader-ring {
+      width: 52px;
+      height: 52px;
+      border: 4px solid rgba(6, 182, 212, 0.1);
+      border-top-color: var(--cyan-neon);
+      border-right-color: var(--indigo-neon);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
+      animation: spin 0.85s linear infinite;
+      margin: 0 auto 18px;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    .loading-text {
-      font-size: 15px;
-      color: #cbd5e1;
-      font-weight: 600;
+    .loader-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
     }
-    .loading-subtext {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 4px;
+    .loader-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 5px;
     }
 
-    /* Error Message Box */
-    .error-box {
+    /* Error Alert */
+    .alert-error {
       display: none;
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(239, 68, 68, 0.08);
       border: 1px solid rgba(239, 68, 68, 0.25);
       color: #fca5a5;
       padding: 16px 20px;
-      border-radius: 12px;
+      border-radius: 14px;
       margin-top: 25px;
       font-size: 14px;
-      display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
     }
 
-    /* Result Card */
-    .result-card {
+    /* Main Result Hub */
+    .result-hub {
       display: none;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 24px;
-      margin-top: 30px;
-      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
-      animation: fadeIn 0.4s ease-out;
+      margin-top: 35px;
+      animation: hubFade 0.35s ease-out;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
+    @keyframes hubFade {
+      from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .video-info-header {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 24px;
+    /* Media Overview Card */
+    .media-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      margin-bottom: 25px;
     }
-    .thumb-wrap {
+    .media-header {
+      display: flex;
+      gap: 22px;
+    }
+    .preview-box {
       position: relative;
-      width: 220px;
-      min-width: 220px;
-      height: 130px;
-      border-radius: 12px;
+      width: 250px;
+      min-width: 250px;
+      height: 145px;
+      border-radius: 14px;
       overflow: hidden;
       background: #000;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
-    .thumb-wrap img {
+    .preview-box img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.3s;
     }
-    .duration-badge {
+    .preview-box:hover img {
+      transform: scale(1.03);
+    }
+    .duration-pill {
       position: absolute;
       bottom: 8px;
       right: 8px;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       color: #fff;
       font-size: 11px;
       font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
       backdrop-filter: blur(4px);
     }
-    .video-details {
+    .media-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .video-title {
-      font-size: 17px;
-      font-weight: 700;
-      line-height: 1.4;
+    .media-title {
+      font-size: 18px;
+      font-weight: 800;
       color: #fff;
+      line-height: 1.4;
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .video-meta {
+    .media-badges {
       display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-top: 8px;
-      font-size: 12px;
-      color: #94a3b8;
-    }
-    .engine-tag {
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      color: #38bdf8;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 700;
-      text-transform: uppercase;
-      font-size: 10px;
-    }
-
-    /* Fast Action Row */
-    .fast-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 14px;
+      gap: 10px;
+      margin-top: 10px;
       flex-wrap: wrap;
     }
-    .btn-quick-video {
-      background: #10b981;
-      color: #fff;
-      border: none;
-      padding: 10px 18px;
-      font-size: 13px;
-      font-weight: 700;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-    .btn-quick-video:hover {
-      background: #059669;
-      transform: translateY(-1px);
-    }
-    .btn-quick-audio {
-      background: #6366f1;
-      color: #fff;
-      border: none;
-      padding: 10px 18px;
-      font-size: 13px;
-      font-weight: 700;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-    .btn-quick-audio:hover {
-      background: #4f46e5;
-      transform: translateY(-1px);
-    }
-
-    /* Tabs */
-    .tabs-header {
-      display: flex;
-      border-bottom: 1px solid var(--card-border);
-      margin-top: 20px;
-      margin-bottom: 16px;
-      gap: 10px;
-    }
-    .tab-btn {
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text-sub);
-      font-size: 14px;
-      font-weight: 700;
-      padding: 10px 16px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-    .tab-btn:hover:not(.active) {
-      color: #fff;
-    }
-
-    /* Streams Table */
-    .stream-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    .stream-table th {
-      text-align: left;
-      padding: 10px 12px;
-      color: #64748b;
-      font-weight: 600;
-      border-bottom: 1px solid var(--card-border);
-    }
-    .stream-table td {
-      padding: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-      vertical-align: middle;
-    }
-    .stream-table tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-    .quality-badge {
-      display: inline-block;
-      font-weight: 700;
-      color: #fff;
-      font-size: 13px;
-    }
-    .format-tag {
-      color: #64748b;
+    .badge-item {
       font-size: 11px;
-      text-transform: uppercase;
-      font-weight: 600;
-      margin-left: 6px;
-    }
-    .has-audio-tag {
-      font-size: 10px;
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 6px;
-    }
-    .btn-download-sm {
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      color: #38bdf8;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 12px;
       font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      transition: all 0.2s;
     }
-    .btn-download-sm:hover {
-      background: var(--accent);
-      color: #0b0f19;
+    .badge-engine {
+      background: rgba(6, 182, 212, 0.1);
+      border-color: rgba(6, 182, 212, 0.3);
+      color: var(--cyan-neon);
+      text-transform: uppercase;
     }
 
-    /* How to Use Section */
-    .how-section {
-      margin-top: 60px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      padding-top: 40px;
+    /* Fast Action Row */
+    .instant-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
     }
-    .how-title {
-      text-align: center;
-      font-size: 22px;
+    .btn-instant-best {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 14px;
       font-weight: 800;
-      margin-bottom: 30px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+      transition: all 0.2s;
     }
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+    .btn-instant-best:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
     }
-    .step-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+    .btn-instant-audio {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #fff;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-instant-audio:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Segmented Filter Control */
+    .filter-switcher {
+      display: flex;
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border-subtle);
       border-radius: 14px;
-      padding: 20px;
-      text-align: center;
+      padding: 4px;
+      gap: 6px;
+      margin-bottom: 20px;
     }
-    .step-num {
-      width: 36px;
-      height: 36px;
-      line-height: 36px;
-      border-radius: 50%;
-      background: rgba(56, 189, 248, 0.1);
-      color: var(--accent);
-      font-weight: 800;
-      margin: 0 auto 12px;
-      font-size: 16px;
-    }
-    .step-card h3 {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .step-card p {
+    .filter-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
       font-size: 13px;
-      color: var(--text-sub);
-      line-height: 1.4;
+      font-weight: 700;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: rgba(6, 182, 212, 0.15);
+      color: #fff;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      box-shadow: 0 2px 10px rgba(6, 182, 212, 0.2);
+    }
+    .filter-btn:hover:not(.active) {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Quality Selection Grid */
+    .quality-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 15px;
+    }
+    .quality-card {
+      background: rgba(14, 20, 34, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .quality-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: transparent;
+      transition: background 0.2s;
+    }
+    .quality-card:hover {
+      border-color: rgba(6, 182, 212, 0.4);
+      background: rgba(17, 24, 39, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .quality-card.selected {
+      border-color: var(--cyan-neon);
+      background: rgba(6, 182, 212, 0.05);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+    }
+    .quality-card.selected::before {
+      background: linear-gradient(90deg, var(--cyan-neon), var(--indigo-neon));
+    }
+    .q-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .q-res {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .q-tag {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+    .q-tag.fhd {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    .q-tag.hd {
+      background: rgba(6, 182, 212, 0.2);
+      color: var(--cyan-neon);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    .q-tag.audio {
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .q-details {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .q-details span b {
+      color: var(--text-body);
+    }
+    .btn-download-card {
+      width: 100%;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--cyan-neon);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-download-card:hover {
+      background: var(--cyan-neon);
+      color: #06090f;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+    }
+
+    /* Floating Download Trigger */
+    .sticky-download-bar {
+      position: sticky;
+      bottom: 20px;
+      margin-top: 25px;
+      background: rgba(14, 20, 34, 0.95);
+      border: 1px solid var(--cyan-neon);
+      border-radius: 18px;
+      padding: 14px 22px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 30px rgba(6, 182, 212, 0.3);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      z-index: 50;
+    }
+    .sticky-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .sticky-quality-label {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .sticky-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .btn-sticky-trigger {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 800;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+    }
+    .btn-sticky-trigger:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    /* Modal Player */
+    .player-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .player-window {
+      background: #111827;
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      max-width: 700px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+    }
+    .player-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .btn-close-modal:hover { color: #fff; }
+    .video-container {
+      width: 100%;
+      background: #000;
+      max-height: 400px;
+    }
+    .video-container video, .video-container audio {
+      width: 100%;
+      display: block;
     }
 
     /* Footer */
@@ -584,346 +767,419 @@ def get_downloader_html() -> str:
       margin-top: auto;
     }
 
-    /* Responsive */
-    @media (max-width: 680px) {
-      .hero h1 { font-size: 28px; }
-      .video-info-header { flex-direction: column; }
-      .thumb-wrap { width: 100%; height: 190px; }
-      .steps-grid { grid-template-columns: 1fr; }
-      .btn-submit span { display: none; }
-      .btn-submit { padding: 14px 18px; }
+    /* Responsive Queries */
+    @media (max-width: 720px) {
+      .hero-box h1 { font-size: 32px; }
+      .media-header { flex-direction: column; }
+      .preview-box { width: 100%; height: 200px; }
+      .sticky-download-bar { flex-direction: column; align-items: stretch; }
+      .btn-sticky-trigger { justify-content: center; }
+      .btn-main-fetch span { display: none; }
+      .btn-main-fetch { padding: 14px 18px; }
     }
   </style>
 </head>
 <body>
-  <div class="glow-bg"></div>
+  <div class="ambient-mesh"></div>
+  <div class="grid-lines"></div>
 
   <!-- Header -->
   <header>
-    <a href="/" class="logo">
-      <span>⚡ AnyDownloader</span>
-      <span class="logo-badge">PRO v1.2</span>
-    </a>
-    <div class="nav-links">
-      <div class="live-status">
-        <span class="status-dot"></span>
-        <span>Online</span>
+    <a href="/" class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
       </div>
-      <a href="/logs" class="nav-link" target="_blank">Live Logs</a>
-      <a href="/docs" class="nav-link" target="_blank">Swagger API</a>
+      <div class="brand-title">
+        <span>VORTEX</span>
+        <span class="brand-badge">STUDIO CORE</span>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <div class="status-badge">
+        <span class="pulse-dot"></span>
+        <span>10 Proxies Active</span>
+      </div>
+      <a href="/logs" class="nav-btn" target="_blank">Engine Logs</a>
+      <a href="/docs" class="nav-btn" target="_blank">API Docs</a>
     </div>
   </header>
 
-  <!-- Main Content -->
+  <!-- Main App -->
   <main>
-    <div class="hero">
-      <h1>Download Video & Audio In Seconds</h1>
-      <p>High-speed direct downloader for YouTube, Shorts, Instagram Reels, TikTok, Twitter/X, and Facebook.</p>
+    <div class="hero-box">
+      <div class="hero-tagline">⚡ Universal High-Definition Media Engine</div>
+      <h1>Extract Any Media in <span>Studio Quality</span></h1>
+      <p>Direct lossless MP4 Video & MP3 Audio downloads from YouTube, Shorts, Instagram Reels, TikTok, and Twitter/X.</p>
     </div>
 
-    <!-- Input Card -->
-    <div class="input-card">
-      <form id="downloadForm" onsubmit="handleFetch(event)">
-        <div class="input-group">
-          <div class="input-icon">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+    <!-- Search Input Box -->
+    <div class="search-wrapper">
+      <form id="fetchForm" onsubmit="handleExtract(event)">
+        <div class="search-row">
+          <div class="url-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
           </div>
           <input 
             type="url" 
-            id="urlInput" 
+            id="urlField" 
             class="url-input" 
-            placeholder="Paste YouTube, Reels, TikTok, or video link here..." 
+            placeholder="Paste YouTube, Shorts, Reels, or TikTok URL..." 
             required 
             autocomplete="off"
           />
-          <button type="button" class="btn-paste" onclick="pasteClipboard()">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          <button type="button" class="btn-icon-action" onclick="quickPaste()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             Paste
           </button>
-          <button type="submit" id="submitBtn" class="btn-submit">
+          <button type="submit" id="extractBtn" class="btn-main-fetch">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            <span>Download</span>
+            <span>Analyze Link</span>
           </button>
         </div>
       </form>
     </div>
 
-    <!-- Supported Platform Badges -->
-    <div class="platforms">
-      <span class="platform-pill">🔴 YouTube & Shorts</span>
-      <span class="platform-pill">🟣 Instagram Reels</span>
-      <span class="platform-pill">⚫ TikTok</span>
-      <span class="platform-pill">🔵 Facebook</span>
-      <span class="platform-pill">⚪ Twitter / X</span>
+    <!-- Supported Platforms -->
+    <div class="platform-row">
+      <span class="platform-tag">🔴 YouTube & Shorts</span>
+      <span class="platform-tag">🟣 Instagram Reels</span>
+      <span class="platform-tag">⚫ TikTok</span>
+      <span class="platform-tag">🔵 Facebook</span>
+      <span class="platform-tag">⚪ Twitter / X</span>
     </div>
 
     <!-- Loading State -->
-    <div id="loadingBox" class="loading-container">
-      <div class="spinner"></div>
-      <div class="loading-text">Resolving Media Streams...</div>
-      <div class="loading-subtext">Checking VidsSave, SaveFrom, and fallback engines with proxy protection</div>
+    <div id="loaderBox" class="loader-box">
+      <div class="loader-ring"></div>
+      <div class="loader-title">Decrypting Media Pipeline...</div>
+      <div class="loader-subtitle">Querying VidsSave + SaveFrom signature + YT-DLP fallback engines</div>
     </div>
 
-    <!-- Error Box -->
-    <div id="errorBox" class="error-box" style="display: none;">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-      <div id="errorMsg">Could not parse link. Please check the URL.</div>
+    <!-- Error Alert -->
+    <div id="errorAlert" class="alert-error">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <span id="errorMessage">Invalid link or media stream unavailable.</span>
     </div>
 
-    <!-- Result Card -->
-    <div id="resultCard" class="result-card">
-      <div class="video-info-header">
-        <div class="thumb-wrap">
-          <img id="resThumb" src="" alt="Thumbnail" />
-          <span id="resDuration" class="duration-badge">0:00</span>
-        </div>
-        <div class="video-details">
-          <div>
-            <div id="resTitle" class="video-title">Video Title</div>
-            <div class="video-meta">
-              <span id="resEngine" class="engine-tag">Engine: Auto</span>
-              <span id="resStreamsCount">0 Available Streams</span>
+    <!-- Result Hub -->
+    <div id="resultHub" class="result-hub">
+      <!-- Media Header Card -->
+      <div class="media-card">
+        <div class="media-header">
+          <div class="preview-box">
+            <img id="cardThumb" src="" alt="Thumbnail" />
+            <span id="cardDuration" class="duration-pill">0:00</span>
+          </div>
+          <div class="media-content">
+            <div>
+              <h2 id="cardTitle" class="media-title">Video Title</h2>
+              <div class="media-badges">
+                <span id="cardEngine" class="badge-item badge-engine">ENGINE: SMART AUTO</span>
+                <span id="cardTotalStreams" class="badge-item">9 Qualities Available</span>
+                <span class="badge-item">⚡ 0-Second Ad-Free</span>
+              </div>
+            </div>
+            <div class="instant-bar">
+              <button id="btnQuickBestVideo" class="btn-instant-best" onclick="downloadSelectedStream(currentSelectedQuality)">
+                ⚡ Download Best Video (MP4)
+              </button>
+              <button id="btnQuickBestAudio" class="btn-instant-audio" onclick="downloadBestAudio()">
+                🎵 Download Audio (MP3)
+              </button>
             </div>
           </div>
-          <div class="fast-actions">
-            <a id="btnFastVideo" href="#" class="btn-quick-video" target="_blank">
-              ⚡ Download Best Video (MP4)
-            </a>
-            <a id="btnFastAudio" href="#" class="btn-quick-audio" target="_blank">
-              🎵 Download Audio (MP3)
-            </a>
-          </div>
         </div>
       </div>
 
-      <!-- Tabs Header -->
-      <div class="tabs-header">
-        <button class="tab-btn active" onclick="switchTab('video')">📹 Video Streams</button>
-        <button class="tab-btn" onclick="switchTab('audio')">🎵 Audio Streams</button>
+      <!-- Segmented Quality View Switcher -->
+      <div class="filter-switcher">
+        <button class="filter-btn active" onclick="switchMode('video')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+          <span id="labelVideoCount">Video Qualities</span>
+        </button>
+        <button class="filter-btn" onclick="switchMode('audio')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+          <span id="labelAudioCount">Audio Bitrates</span>
+        </button>
       </div>
 
-      <!-- Video Streams List -->
-      <div id="videoTab">
-        <table class="stream-table">
-          <thead>
-            <tr>
-              <th>Resolution</th>
-              <th>Format</th>
-              <th>File Size</th>
-              <th style="text-align: right;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="videoStreamsBody"></tbody>
-        </table>
-      </div>
+      <!-- Dynamic Interactive Quality Grid -->
+      <div id="videoGrid" class="quality-grid"></div>
+      <div id="audioGrid" class="quality-grid" style="display: none;"></div>
 
-      <!-- Audio Streams List -->
-      <div id="audioTab" style="display: none;">
-        <table class="stream-table">
-          <thead>
-            <tr>
-              <th>Bitrate</th>
-              <th>Format</th>
-              <th>File Size</th>
-              <th style="text-align: right;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="audioStreamsBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- How It Works Section -->
-    <div class="how-section">
-      <h2 class="how-title">How To Use AnyDownloader</h2>
-      <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-num">1</div>
-          <h3>Copy Media Link</h3>
-          <p>Copy the video URL from YouTube, Instagram Reels, TikTok, or Twitter.</p>
+      <!-- Sticky Download Action Bar -->
+      <div id="stickyBar" class="sticky-download-bar" style="display: none;">
+        <div class="sticky-info">
+          <div id="stickyLabel" class="sticky-quality-label">1080p Full HD (MP4)</div>
+          <div id="stickySize" class="sticky-subtext">Estimated size: ~90.4 MB • Complete Sound Included</div>
         </div>
-        <div class="step-card">
-          <div class="step-num">2</div>
-          <h3>Paste in Box</h3>
-          <p>Click the "Paste" button or paste the link directly into the search bar above.</p>
-        </div>
-        <div class="step-card">
-          <div class="step-num">3</div>
-          <h3>Download File</h3>
-          <p>Select your desired resolution (1080p, 720p, 360p) or MP3 to save instantly!</p>
-        </div>
+        <button id="stickyBtn" class="btn-sticky-trigger" onclick="downloadSelectedStream()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>Download Now</span>
+        </button>
       </div>
     </div>
   </main>
 
+  <!-- In-Browser Stream Player Modal -->
+  <div id="playerModal" class="player-modal" onclick="closePlayer(event)">
+    <div class="player-window" onclick="event.stopPropagation()">
+      <div class="player-top">
+        <span id="playerTitle">Stream Preview</span>
+        <button class="btn-close-modal" onclick="closePlayer()">&times;</button>
+      </div>
+      <div class="video-container">
+        <video id="modalVideo" controls style="display: none;"></video>
+        <audio id="modalAudio" controls style="display: none; padding: 30px 20px;"></audio>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
-    <p>Powered by ⚡ Down-API Engine Waterfall (VidsSave + SaveFrom REA + YT-DLP) | 10 Residential Proxies Active</p>
+    <p>⚡ VORTEX Media Engine • Multi-Tier Cascade (VidsSave ⭢ SaveFrom REA ⭢ YT-DLP) • Zero Datacenter Ban</p>
   </footer>
 
   <script>
-    async function pasteClipboard() {
+    let currentData = null;
+    let currentTargetUrl = '';
+    let currentSelectedQuality = null;
+
+    async function quickPaste() {
       try {
         const text = await navigator.clipboard.readText();
         if (text) {
-          document.getElementById('urlInput').value = text.trim();
-          handleFetch();
+          document.getElementById('urlField').value = text.trim();
+          handleExtract();
         }
-      } catch (err) {
-        document.getElementById('urlInput').focus();
+      } catch (e) {
+        document.getElementById('urlField').focus();
       }
     }
 
-    function switchTab(tab) {
-      const vTab = document.getElementById('videoTab');
-      const aTab = document.getElementById('audioTab');
-      const btns = document.querySelectorAll('.tab-btn');
+    function switchMode(mode) {
+      const vGrid = document.getElementById('videoGrid');
+      const aGrid = document.getElementById('audioGrid');
+      const btns = document.querySelectorAll('.filter-btn');
 
-      if (tab === 'video') {
-        vTab.style.display = 'block';
-        aTab.style.display = 'none';
+      if (mode === 'video') {
+        vGrid.style.display = 'grid';
+        aGrid.style.display = 'none';
         btns[0].classList.add('active');
         btns[1].classList.remove('active');
       } else {
-        vTab.style.display = 'none';
-        aTab.style.display = 'block';
+        vGrid.style.display = 'none';
+        aGrid.style.display = 'grid';
         btns[1].classList.add('active');
         btns[0].classList.remove('active');
       }
     }
 
     function formatBytes(bytes) {
-      if (!bytes || bytes === 0) return 'Variable / Stream';
+      if (!bytes || bytes === 0 || isNaN(bytes)) return 'Lossless Stream';
       const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
     }
 
-    async function handleFetch(e) {
+    function getQualityBadge(q) {
+      const qUpper = String(q || '').toUpperCase();
+      if (qUpper.includes('1080') || qUpper.includes('2K') || qUpper.includes('4K')) {
+        return { label: 'FULL HD 1080P', cls: 'fhd', note: 'Studio Quality' };
+      }
+      if (qUpper.includes('720')) {
+        return { label: 'HD 720P', cls: 'hd', note: 'Recommended' };
+      }
+      if (qUpper.includes('480')) {
+        return { label: 'STANDARD 480P', cls: '', note: 'Balanced' };
+      }
+      if (qUpper.includes('360')) {
+        return { label: 'FAST 360P', cls: '', note: 'Lightweight' };
+      }
+      return { label: qUpper || 'MP4', cls: '', note: 'Video' };
+    }
+
+    function getAudioBadge(q) {
+      const qUpper = String(q || '').toUpperCase();
+      if (qUpper.includes('320') || qUpper.includes('256')) {
+        return { label: 'STUDIO 256K', cls: 'audio', note: 'Lossless Audio' };
+      }
+      if (qUpper.includes('140') || qUpper.includes('128') || qUpper.includes('139') || qUpper.includes('131')) {
+        return { label: 'HIGH 128K', cls: 'audio', note: 'Crisp Audio' };
+      }
+      return { label: qUpper || 'MP3', cls: 'audio', note: 'Standard Audio' };
+    }
+
+    async function handleExtract(e) {
       if (e) e.preventDefault();
-      const url = document.getElementById('urlInput').value.trim();
+      const url = document.getElementById('urlField').value.trim();
       if (!url) return;
 
-      const loadingBox = document.getElementById('loadingBox');
-      const errorBox = document.getElementById('errorBox');
-      const resultCard = document.getElementById('resultCard');
-      const submitBtn = document.getElementById('submitBtn');
+      currentTargetUrl = url;
+      const loaderBox = document.getElementById('loaderBox');
+      const errorAlert = document.getElementById('errorAlert');
+      const resultHub = document.getElementById('resultHub');
+      const extractBtn = document.getElementById('extractBtn');
 
-      loadingBox.style.display = 'block';
-      errorBox.style.display = 'none';
-      resultCard.style.display = 'none';
-      submitBtn.disabled = true;
+      loaderBox.style.display = 'block';
+      errorAlert.style.display = 'none';
+      resultHub.style.display = 'none';
+      extractBtn.disabled = true;
 
       try {
         const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
         const data = await res.json();
 
         if (!res.ok || data.status !== 'success') {
-          throw new Error(data.detail || data.message || 'Unable to fetch video details.');
+          throw new Error(data.detail || data.message || 'Media extraction failed. Please check the URL.');
         }
 
-        // Fill Metadata
-        document.getElementById('resTitle').textContent = data.title || 'Video Title';
-        document.getElementById('resThumb').src = data.thumbnail || 'https://via.placeholder.com/320x180?text=No+Thumbnail';
-        document.getElementById('resDuration').textContent = data.duration || 'Video';
-        document.getElementById('resEngine').textContent = `Engine: ${data.engine || 'Auto'}`;
+        currentData = data;
+
+        // Render Media Card Header
+        document.getElementById('cardTitle').textContent = data.title || 'Untitled Video';
+        document.getElementById('cardThumb').src = data.thumbnail || 'https://via.placeholder.com/480x270?text=No+Thumbnail';
+        document.getElementById('cardDuration').textContent = data.duration || 'Video';
+        document.getElementById('cardEngine').textContent = `ENGINE: ${data.engine || 'SMART WATERFALL'}`;
 
         const vList = data.videos || [];
         const aList = data.audios || [];
-        document.getElementById('resStreamsCount').textContent = `${vList.length + aList.length} Qualities Available`;
+        document.getElementById('cardTotalStreams').textContent = `${vList.length + aList.length} Formats Available`;
+        document.getElementById('labelVideoCount').textContent = `Video Formats (${vList.length})`;
+        document.getElementById('labelAudioCount').textContent = `Audio Formats (${aList.length})`;
 
-        // Direct Quick 1-Click buttons
-        const fastVideoUrl = `/api/download?url=${encodeURIComponent(url)}&type=video&quality=best`;
-        const fastAudioUrl = `/api/download?url=${encodeURIComponent(url)}&type=audio`;
-        
-        document.getElementById('btnFastVideo').onclick = () => { triggerDownload(fastVideoUrl); return false; };
-        document.getElementById('btnFastAudio').onclick = () => { triggerDownload(fastAudioUrl); return false; };
-
-        // Populate Video Streams
-        const vBody = document.getElementById('videoStreamsBody');
-        vBody.innerHTML = '';
+        // Populate Video Grid
+        const vGrid = document.getElementById('videoGrid');
+        vGrid.innerHTML = '';
         if (vList.length === 0) {
-          vBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b;">No video streams detected</td></tr>';
+          vGrid.innerHTML = '<div style="color:#64748b;grid-column:1/-1;text-align:center;padding:20px;">No video formats detected. Try Audio tab.</div>';
         } else {
-          vList.forEach(v => {
-            const row = document.createElement('tr');
-            const dlLink = v.download_url || `/api/download?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(v.quality)}`;
-            row.innerHTML = `
-              <td>
-                <span class="quality-badge">${escapeHtml(v.quality || 'Video')}</span>
-                ${v.has_audio ? '<span class="has-audio-tag">🔊 With Sound</span>' : ''}
-              </td>
-              <td><span class="format-tag">${escapeHtml(v.format || 'mp4')}</span></td>
-              <td style="color:#94a3b8;">${formatBytes(v.size)}</td>
-              <td style="text-align: right;">
-                <button class="btn-download-sm" onclick="triggerDownload('${dlLink}')">
-                  📥 Download
-                </button>
-              </td>
+          vList.forEach((v, idx) => {
+            const badge = getQualityBadge(v.quality);
+            const card = document.createElement('div');
+            card.className = `quality-card ${idx === 0 ? 'selected' : ''}`;
+            card.onclick = () => selectCard(v, 'video', card);
+
+            const directLink = v.download_url || `/api/download?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(v.quality)}`;
+            const streamLink = `/api/stream?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(v.quality)}`;
+
+            card.innerHTML = `
+              <div class="q-top">
+                <div class="q-res">
+                  <span>${escapeHtml(v.quality || 'Video')}</span>
+                  <span class="q-tag ${badge.cls}">${badge.label}</span>
+                </div>
+              </div>
+              <div class="q-details">
+                <span>Format: <b>${escapeHtml((v.format || 'mp4').toUpperCase())}</b></span>
+                <span>Size: <b>${formatBytes(v.size)}</b></span>
+                <span>Type: <b>${v.has_audio === false ? 'Video Only' : '🔊 Complete'}</b></span>
+              </div>
+              <button class="btn-download-card" onclick="event.stopPropagation(); triggerDirectStream('${streamLink}', '${v.download_url}')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download ${escapeHtml(v.quality || 'MP4')}
+              </button>
             `;
-            vBody.appendChild(row);
+            vGrid.appendChild(card);
+            if (idx === 0) selectCard(v, 'video', card);
           });
         }
 
-        // Populate Audio Streams
-        const aBody = document.getElementById('audioStreamsBody');
-        aBody.innerHTML = '';
+        // Populate Audio Grid
+        const aGrid = document.getElementById('audioGrid');
+        aGrid.innerHTML = '';
         if (aList.length === 0) {
-          aBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b;">No audio streams detected</td></tr>';
+          aGrid.innerHTML = '<div style="color:#64748b;grid-column:1/-1;text-align:center;padding:20px;">No audio formats detected.</div>';
         } else {
-          aList.forEach(a => {
-            const row = document.createElement('tr');
-            const dlLink = a.download_url || `/api/download?url=${encodeURIComponent(url)}&type=audio`;
-            row.innerHTML = `
-              <td><span class="quality-badge">${escapeHtml(a.quality || 'Audio')}</span></td>
-              <td><span class="format-tag">${escapeHtml(a.format || 'mp3')}</span></td>
-              <td style="color:#94a3b8;">${formatBytes(a.size)}</td>
-              <td style="text-align: right;">
-                <button class="btn-download-sm" onclick="triggerDownload('${dlLink}')">
-                  🎵 Download MP3
-                </button>
-              </td>
+          aList.forEach((a, idx) => {
+            const badge = getAudioBadge(a.quality);
+            const card = document.createElement('div');
+            card.className = 'quality-card';
+            card.onclick = () => selectCard(a, 'audio', card);
+
+            const directLink = a.download_url || `/api/download?url=${encodeURIComponent(url)}&type=audio&quality=${encodeURIComponent(a.quality)}`;
+            const streamLink = `/api/stream?url=${encodeURIComponent(url)}&type=audio`;
+
+            card.innerHTML = `
+              <div class="q-top">
+                <div class="q-res">
+                  <span>${escapeHtml(a.quality || 'Audio')}</span>
+                  <span class="q-tag ${badge.cls}">${badge.label}</span>
+                </div>
+              </div>
+              <div class="q-details">
+                <span>Format: <b>${escapeHtml((a.format || 'mp3').toUpperCase())}</b></span>
+                <span>Size: <b>${formatBytes(a.size)}</b></span>
+                <span>Bitrate: <b>${escapeHtml(a.quality)}</b></span>
+              </div>
+              <button class="btn-download-card" onclick="event.stopPropagation(); triggerDirectStream('${streamLink}', '${a.download_url}')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                Download MP3 (${escapeHtml(a.quality)})
+              </button>
             `;
-            aBody.appendChild(row);
+            aGrid.appendChild(card);
           });
         }
 
-        resultCard.style.display = 'block';
-        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        resultHub.style.display = 'block';
+        document.getElementById('stickyBar').style.display = 'flex';
+        resultHub.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
       } catch (err) {
-        document.getElementById('errorMsg').textContent = err.message || 'Error occurred while fetching media.';
-        errorBox.style.display = 'flex';
+        document.getElementById('errorMessage').textContent = err.message || 'An error occurred while fetching media.';
+        errorAlert.style.display = 'flex';
       } finally {
-        loadingBox.style.display = 'none';
-        submitBtn.disabled = false;
+        loaderBox.style.display = 'none';
+        extractBtn.disabled = false;
       }
     }
 
-    async function triggerDownload(url) {
-      // If it is already a direct CDN link (e.g. googlevideo or cdn)
-      if (url.startsWith('http') && !url.includes('/api/download')) {
-        window.open(url, '_blank');
+    function selectCard(item, type, element) {
+      document.querySelectorAll('.quality-card').forEach(c => c.classList.remove('selected'));
+      element.classList.add('selected');
+      currentSelectedQuality = { item, type };
+
+      const stickyLabel = document.getElementById('stickyLabel');
+      const stickySize = document.getElementById('stickySize');
+
+      const qName = item.quality || (type === 'video' ? 'Best Video' : 'Best Audio');
+      const fName = (item.format || (type === 'video' ? 'mp4' : 'mp3')).toUpperCase();
+      stickyLabel.textContent = `Selected: ${qName} (${fName})`;
+      stickySize.textContent = `Size: ${formatBytes(item.size)} • Instant Direct Download`;
+    }
+
+    function downloadSelectedStream() {
+      if (!currentSelectedQuality || !currentTargetUrl) {
+        const defaultStream = `/api/stream?url=${encodeURIComponent(currentTargetUrl)}&type=video&quality=best`;
+        window.location.href = defaultStream;
         return;
       }
-      
-      // If it is an API download endpoint, resolve it first
-      try {
-        const btn = event?.currentTarget;
-        const originalText = btn ? btn.innerHTML : null;
-        if (btn) btn.innerHTML = '⏳ Preparing...';
+      const { item, type } = currentSelectedQuality;
+      const q = item.quality || 'best';
+      const streamUrl = `/api/stream?url=${encodeURIComponent(currentTargetUrl)}&type=${type}&quality=${encodeURIComponent(q)}`;
+      window.location.href = streamUrl;
+    }
 
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data && data.download_url) {
-          window.open(data.download_url, '_blank');
-        } else {
-          alert('Could not resolve direct link: ' + JSON.stringify(data));
-        }
-        if (btn && originalText) btn.innerHTML = originalText;
-      } catch (e) {
-        window.open(url, '_blank');
-      }
+    function downloadBestAudio() {
+      const audioUrl = `/api/stream?url=${encodeURIComponent(currentTargetUrl)}&type=audio`;
+      window.location.href = audioUrl;
+    }
+
+    function triggerDirectStream(streamUrl, directCdnUrl) {
+      // Direct stream triggers browser download dialog instantly
+      window.location.href = streamUrl;
+    }
+
+    function closePlayer() {
+      const modal = document.getElementById('playerModal');
+      const v = document.getElementById('modalVideo');
+      const a = document.getElementById('modalAudio');
+      v.pause();
+      a.pause();
+      v.src = '';
+      a.src = '';
+      modal.style.display = 'none';
     }
 
     function escapeHtml(str) {
