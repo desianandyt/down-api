@@ -17,7 +17,7 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         "socket_timeout": 12,
         "extractor_args": {
             "youtube": {
-                "player_client": ["visionos", "android"]
+                "player_client": ["android", "visionos"]
             }
         }
     }

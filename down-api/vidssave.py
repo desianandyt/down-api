@@ -184,7 +184,7 @@ def parse_media(url: str) -> Dict[str, Any]:
         return _execute_parse(url)
 
 
-def _execute_download(resource_content: str, output_format: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
+def _execute_download(resource_content: str, output_format: Optional[str] = None, timeout: int = 25) -> Dict[str, Any]:
     payload = {
         "hostname": "vidssave.com",
         "auth": creds_manager.auth_code,
@@ -263,5 +263,5 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     raise TimeoutError("SSE connection ended without download_link")
 
 
-def resolve_download_link(resource_content: str, output_format: Optional[str] = None, timeout: int = 20) -> Dict[str, Any]:
+def resolve_download_link(resource_content: str, output_format: Optional[str] = None, timeout: int = 25) -> Dict[str, Any]:
     return _execute_download(resource_content, output_format=output_format, timeout=timeout)
