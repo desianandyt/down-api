@@ -3,7 +3,10 @@ import json
 import logging
 import subprocess
 import shutil
+import tempfile
+import requests
 from typing import Any, Dict, List, Optional
+from proxy_manager import proxy_pool
 
 logger = logging.getLogger("savefrom")
 
@@ -11,61 +14,118 @@ EXTRACTOR_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "savef
 
 
 def _ensure_jsdom():
-    """Ensures jsdom dependency is available if node is installed."""
-    if not shutil.which("node"):
-        logger.warning("Node.js is not found on PATH. SaveFrom engine requires Node.js.")
-        return False
-    
-    test_cmd = ["node", "-e", "try{require('jsdom')}catch(e){try{require('/tmp/node_modules/jsdom')}catch(e2){try{require('/data/data/com.termux/files/usr/lib/node_modules/jsdom')}catch(e3){process.exit(1)}}}"]
+    """Ensures jsdom is installed in /tmp if not found."""
+    if not shutil.which("node") or not shutil.which("npm"):
+        return
     try:
-        r = subprocess.run(test_cmd, capture_output=True, timeout=5)
-        if r.returncode != 0 and shutil.which("npm"):
+        if not os.path.exists("/tmp/node_modules/jsdom"):
             logger.info("Installing jsdom in /tmp for SaveFrom engine...")
             subprocess.run(["npm", "install", "--prefix", "/tmp", "jsdom", "--no-save"], capture_output=True, timeout=60)
     except Exception as e:
         logger.warning(f"Error checking/installing jsdom: {e}")
-    return True
 
 
-_ensure_jsdom()
+def _sign_with_node(url: str, msec: Optional[float] = None) -> Dict[str, Any]:
+    """Generates signed payload using savefrom_extractor.js."""
+    node_bin = shutil.which("node") or "node"
+    cmd = [node_bin, EXTRACTOR_PATH, "sign", url]
+    if msec:
+        cmd.append(str(msec))
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    if proc.returncode != 0:
+        raise RuntimeError(f"Signer failed: {proc.stderr.strip() or proc.stdout.strip()}")
+    return json.loads(proc.stdout.strip())
+
+
+def _decrypt_with_node(js_content: str) -> Dict[str, Any]:
+    """Decrypts JS worker response using savefrom_extractor.js."""
+    node_bin = shutil.which("node") or "node"
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as tf:
+        tf.write(js_content)
+        tf_name = tf.name
+
+    try:
+        cmd = [node_bin, EXTRACTOR_PATH, "decrypt", tf_name]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        if proc.returncode != 0:
+            raise RuntimeError(f"Decryptor failed: {proc.stderr.strip() or proc.stdout.strip()}")
+        return json.loads(proc.stdout.strip())
+    finally:
+        if os.path.exists(tf_name):
+            try:
+                os.remove(tf_name)
+            except Exception:
+                pass
 
 
 def extract_raw(url: str) -> Dict[str, Any]:
-    """Invokes savefrom_extractor.js via Node.js to fetch raw SaveFrom metadata."""
+    """Extracts raw metadata from SaveFrom utilizing proxies to avoid datacenter Cloudflare blocks."""
     if not os.path.exists(EXTRACTOR_PATH):
         raise FileNotFoundError(f"SaveFrom extractor script not found at {EXTRACTOR_PATH}")
 
-    node_bin = shutil.which("node") or "node"
-    env = os.environ.copy()
-    
-    # Try running the node extractor
-    cmd = [node_bin, EXTRACTOR_PATH, url]
+    # 1. Fetch live msec
+    msec = None
+    proxies = proxy_pool.get_dict()
     try:
-        proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=25,
-            env=env
-        )
-    except subprocess.TimeoutExpired:
-        raise TimeoutError("SaveFrom extraction timed out after 25s")
+        msec_res = requests.get("https://en1.savefrom.net/msec", headers={"User-Agent": "Mozilla/5.0"}, proxies=proxies, timeout=6)
+        if msec_res.status_code == 200:
+            msec = msec_res.json().get("msec")
+    except Exception as e:
+        logger.debug(f"msec fetch error: {e}")
 
-    if proc.returncode != 0:
-        err_msg = proc.stderr.strip() or proc.stdout.strip()
+    # 2. Sign request
+    signed = _sign_with_node(url, msec=msec)
+
+    payload = {
+        "sf_url": signed["url"],
+        "new": "2",
+        "lang": "en",
+        "app": "",
+        "sf-nomad": "1",
+        "ts": signed["ts"],
+        "_ts": signed["_ts"],
+        "_tsc": signed["_tsc"],
+        "_s": signed["_s"],
+        "_x": signed["_x"]
+    }
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Origin": "https://en1.savefrom.net",
+        "Referer": "https://en1.savefrom.net/19wr/",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    # 3. Post to worker with residential proxy
+    worker_url = "https://worker.savefrom.net/savefrom.php"
+    last_err = None
+
+    # Try up to 3 proxy attempts
+    for attempt in range(3):
+        cur_proxies = proxy_pool.get_dict()
         try:
-            parsed_err = json.loads(err_msg)
-            if "error" in parsed_err:
-                err_msg = parsed_err["error"]
-        except Exception:
-            pass
-        raise RuntimeError(f"SaveFrom extraction failed (exit {proc.returncode}): {err_msg}")
+            resp = requests.post(worker_url, data=payload, headers=headers, proxies=cur_proxies, timeout=12)
+            text = resp.text
+            if "/*js-response*/" in text:
+                # Successfully received encrypted JS response
+                return _decrypt_with_node(text)
+            elif "<!DOCTYPE" in text or "<html" in text:
+                logger.warning(f"SaveFrom attempt {attempt+1} got HTML challenge from proxy {cur_proxies}. Retrying with next proxy...")
+                continue
+            else:
+                last_err = f"Unexpected response (status {resp.status_code}): {text[:200]}"
+        except Exception as e:
+            logger.warning(f"SaveFrom worker request error on attempt {attempt+1}: {e}")
+            last_err = str(e)
 
-    try:
-        data = json.loads(proc.stdout.strip())
-        return data
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Failed to decode SaveFrom output as JSON: {proc.stdout[:200]}") from e
+    # 4. Fallback to direct Node execution if proxy attempts were exhausted
+    logger.info("Falling back to direct node execution for SaveFrom...")
+    node_bin = shutil.which("node") or "node"
+    proc = subprocess.run([node_bin, EXTRACTOR_PATH, url], capture_output=True, text=True, timeout=20)
+    if proc.returncode == 0:
+        return json.loads(proc.stdout.strip())
+
+    raise RuntimeError(f"SaveFrom extraction failed: {last_err or proc.stderr.strip() or proc.stdout.strip()}")
 
 
 def parse_media(url: str) -> Dict[str, Any]:
@@ -143,8 +203,7 @@ def get_direct_download(url: str, media_type: str = "video", quality: str = "bes
         audios = info.get("audios", [])
         if not audios:
             raise ValueError("No audio streams found on SaveFrom")
-        
-        # Pick highest bitrate
+
         def parse_bitrate(a):
             q = a.get("quality", "").lower().replace("kbps", "")
             try:
@@ -170,14 +229,12 @@ def get_direct_download(url: str, media_type: str = "video", quality: str = "bes
         if not videos:
             raise ValueError("No video streams found on SaveFrom")
 
-        # Prioritize videos with audio
         with_audio = [v for v in videos if v.get("has_audio")]
         pool = with_audio if with_audio else videos
 
         selected = None
         if quality != "best":
             q_clean = quality.lower().replace("p", "")
-            # Try to match quality with audio first
             matched = [v for v in pool if v.get("quality", "").lower().replace("p", "") == q_clean]
             if not matched:
                 matched = [v for v in videos if v.get("quality", "").lower().replace("p", "") == q_clean]
@@ -185,7 +242,6 @@ def get_direct_download(url: str, media_type: str = "video", quality: str = "bes
                 selected = matched[0]
 
         if not selected:
-            # Pick highest height/quality available with audio, or best in pool
             def parse_res(v):
                 q = v.get("quality", "").lower().replace("p", "")
                 try:

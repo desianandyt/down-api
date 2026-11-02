@@ -45,21 +45,23 @@ function loadScripts() {
     }
 }
 
-async function signRequest(targetUrl) {
+async function signRequest(targetUrl, customMsec) {
     loadScripts();
 
-    let msec = Date.now() / 1000;
-    try {
-        const msecRes = await fetch('https://en1.savefrom.net/msec', {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-            signal: AbortSignal.timeout(4000)
-        });
-        const msecData = await msecRes.json();
-        if (msecData && msecData.msec) {
-            msec = msecData.msec;
+    let msec = customMsec || (Date.now() / 1000);
+    if (!customMsec) {
+        try {
+            const msecRes = await fetch('https://en1.savefrom.net/msec', {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+                signal: AbortSignal.timeout(4000)
+            });
+            const msecData = await msecRes.json();
+            if (msecData && msecData.msec) {
+                msec = msecData.msec;
+            }
+        } catch (e) {
+            // fallback to current time
         }
-    } catch (e) {
-        // fallback to current time
     }
 
     const sandbox = {
@@ -136,35 +138,11 @@ async function signRequest(targetUrl) {
     return signed;
 }
 
-async function extractSaveFrom(targetUrl) {
-    const signed = await signRequest(targetUrl);
+function decryptResponse(jsResponse) {
+    if (jsResponse.includes('<!DOCTYPE') || jsResponse.includes('<html')) {
+        throw new Error('SaveFrom returned HTML/Cloudflare challenge instead of JS response');
+    }
 
-    const body = new URLSearchParams({
-        sf_url: signed.url,
-        new: '2',
-        lang: 'en',
-        app: '',
-        'sf-nomad': '1',
-        ts: signed.ts,
-        _ts: signed._ts,
-        _tsc: signed._tsc,
-        _s: signed._s,
-        _x: signed._x
-    });
-
-    const res = await fetch('https://worker.savefrom.net/savefrom.php', {
-        method: 'POST',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Origin': 'https://en1.savefrom.net',
-            'Referer': 'https://en1.savefrom.net/19wr/',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: body.toString(),
-        signal: AbortSignal.timeout(15000)
-    });
-
-    let jsResponse = await res.text();
     const w = '/*js-response*/';
     const f = jsResponse.indexOf(w);
     const v = jsResponse.indexOf(w, f + 1);
@@ -222,17 +200,74 @@ async function extractSaveFrom(targetUrl) {
     throw new Error('SaveFrom extraction returned no data');
 }
 
-// CLI usage: node savefrom_extractor.js <url>
-if (require.main === module) {
-    const url = process.argv[2] || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-    extractSaveFrom(url)
-        .then(data => {
-            console.log(JSON.stringify(data, null, 2));
-        })
-        .catch(err => {
-            console.error(JSON.stringify({ error: err.message }));
-            process.exit(1);
-        });
+async function extractSaveFrom(targetUrl) {
+    const signed = await signRequest(targetUrl);
+
+    const body = new URLSearchParams({
+        sf_url: signed.url,
+        new: '2',
+        lang: 'en',
+        app: '',
+        'sf-nomad': '1',
+        ts: signed.ts,
+        _ts: signed._ts,
+        _tsc: signed._tsc,
+        _s: signed._s,
+        _x: signed._x
+    });
+
+    const res = await fetch('https://worker.savefrom.net/savefrom.php', {
+        method: 'POST',
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Origin': 'https://en1.savefrom.net',
+            'Referer': 'https://en1.savefrom.net/19wr/',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body.toString(),
+        signal: AbortSignal.timeout(15000)
+    });
+
+    const jsResponse = await res.text();
+    return decryptResponse(jsResponse);
 }
 
-module.exports = { extractSaveFrom };
+// CLI usage:
+// 1. node savefrom_extractor.js sign <url> [msec]
+// 2. node savefrom_extractor.js decrypt <file_path>
+// 3. node savefrom_extractor.js <url>
+if (require.main === module) {
+    const mode = process.argv[2];
+    if (mode === 'sign') {
+        const url = process.argv[3];
+        const msec = process.argv[4] ? parseFloat(process.argv[4]) : null;
+        signRequest(url, msec)
+            .then(data => console.log(JSON.stringify(data)))
+            .catch(err => {
+                console.error(JSON.stringify({ error: err.message }));
+                process.exit(1);
+            });
+    } else if (mode === 'decrypt') {
+        const filePath = process.argv[3];
+        try {
+            const content = fs.readFileSync(filePath, 'utf8');
+            const data = decryptResponse(content);
+            console.log(JSON.stringify(data));
+        } catch (err) {
+            console.error(JSON.stringify({ error: err.message }));
+            process.exit(1);
+        }
+    } else {
+        const url = mode || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        extractSaveFrom(url)
+            .then(data => {
+                console.log(JSON.stringify(data, null, 2));
+            })
+            .catch(err => {
+                console.error(JSON.stringify({ error: err.message }));
+                process.exit(1);
+            });
+    }
+}
+
+module.exports = { extractSaveFrom, signRequest, decryptResponse };
