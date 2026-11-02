@@ -42,28 +42,35 @@ class DownloadRequest(BaseModel):
 
 @app.get("/api/debug")
 def debug():
-    import requests
+    import traceback
     try:
         ip_info = requests.get("https://api.ipify.org?format=json", timeout=5).json()
     except Exception as e:
         ip_info = {"error": str(e)}
 
-    test_payload = {
-        "hostname": "vidssave.com",
-        "auth": vidssave.AUTH_CODE,
-        "domain": vidssave.DOMAIN,
-        "origin": "source",
-        "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    }
-    try:
-        r = requests.post(f"{vidssave.API_BASE}/api/contentsite_api/media/parse", data=test_payload, headers=vidssave.DEFAULT_HEADERS, timeout=10)
-        vs_res = {"status_code": r.status_code, "text": r.text, "headers": dict(r.headers)}
-    except Exception as e:
-        vs_res = {"error": str(e)}
+    results = {}
+    for ep in vidssave.ENDPOINTS:
+        test_payload = {
+            "hostname": "vidssave.com",
+            "auth": vidssave.creds_manager.auth_code,
+            "domain": vidssave.creds_manager.domain,
+            "origin": "source",
+            "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+        try:
+            r = requests.post(f"{ep['api_base']}/media/parse", data=test_payload, headers=vidssave.DEFAULT_HEADERS, timeout=6)
+            results[ep["name"]] = {"status_code": r.status_code, "text": r.text[:200]}
+        except Exception as e:
+            results[ep["name"]] = {"error": str(e)}
 
     return {
         "render_ip": ip_info,
-        "vidssave_response": vs_res
+        "credentials": {
+            "auth": vidssave.creds_manager.auth_code,
+            "domain": vidssave.creds_manager.domain,
+            "keys_count": len(vidssave.creds_manager.keys)
+        },
+        "endpoints_test": results
     }
 
 

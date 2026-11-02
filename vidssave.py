@@ -94,6 +94,9 @@ class CredentialsManager:
 
 
 creds_manager = CredentialsManager()
+AUTH_CODE = creds_manager.auth_code
+API_BASE = "https://test-api.vidssave.com/vapi/contentsite_api"
+DOMAIN = creds_manager.domain
 
 
 def decrypt_payload(ciphertext_b64: str) -> Any:
