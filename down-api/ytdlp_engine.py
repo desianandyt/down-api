@@ -17,7 +17,7 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         "socket_timeout": 12,
         "extractor_args": {
             "youtube": {
-                "player_client": ["tv_embedded", "android_embedded", "android"]
+                "player_client": ["visionos", "android"]
             }
         }
     }
@@ -35,10 +35,14 @@ def get_ytdlp_direct_link(url: str, media_type: str = "video", quality: Optional
     formats = info.get("formats", [])
 
     if media_type == "audio":
-        audio_formats = [f for f in formats if f.get("vcodec") == "none" and f.get("acodec") != "none"]
-        best = max(audio_formats, key=lambda x: x.get("abr") or 0) if audio_formats else None
-        if not best and formats:
-            best = formats[0]
+        audio_formats = [
+            f for f in formats
+            if f.get("acodec") and f.get("acodec") != "none" and f.get("ext") not in ("mhtml", "jpg", "jpeg", "webp")
+        ]
+        # Prefer pure audio formats first
+        pure_audio = [f for f in audio_formats if f.get("vcodec") == "none"]
+        pool = pure_audio if pure_audio else audio_formats
+        best = max(pool, key=lambda x: x.get("abr") or 0) if pool else None
         return {
             "title": info.get("title"),
             "thumbnail": info.get("thumbnail"),
@@ -46,7 +50,7 @@ def get_ytdlp_direct_link(url: str, media_type: str = "video", quality: Optional
             "direct_url": best.get("url") if best else None,
             "format": best.get("ext") if best else "mp3",
             "filesize": best.get("filesize") or best.get("filesize_approx") if best else None,
-            "quality": f"{best.get('abr', 128)}kbps" if best else "standard"
+            "quality": f"{int(best.get('abr'))}kbps" if best and best.get("abr") else "128kbps"
         }
     else:
         video_formats = [f for f in formats if f.get("vcodec") != "none"]

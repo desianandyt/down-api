@@ -253,17 +253,24 @@ def _process_info(target_url: str):
             videos = []
             audios = []
             for f in formats:
-                res_val = f.get("resolution") or (f"{f.get('height')}p" if f.get("height") else None)
-                item = {
-                    "quality": res_val or f.get("format_note") or "standard",
-                    "format": f.get("ext"),
-                    "size": f.get("filesize") or f.get("filesize_approx"),
-                    "download_url": f.get("url")
-                }
-                if f.get("vcodec") == "none":
-                    audios.append(item)
-                else:
-                    videos.append(item)
+                if f.get("ext") in ("mhtml", "jpg", "jpeg", "webp"):
+                    continue
+                if f.get("vcodec") == "none" and f.get("acodec") and f.get("acodec") != "none":
+                    res_val = f"{int(f.get('abr'))}kbps" if f.get("abr") else (f.get("format_note") or "audio")
+                    audios.append({
+                        "quality": res_val,
+                        "format": f.get("ext"),
+                        "size": f.get("filesize") or f.get("filesize_approx"),
+                        "download_url": f.get("url")
+                    })
+                elif f.get("vcodec") and f.get("vcodec") != "none":
+                    res_val = f.get("resolution") or (f"{f.get('height')}p" if f.get("height") else None)
+                    videos.append({
+                        "quality": res_val or f.get("format_note") or "video",
+                        "format": f.get("ext"),
+                        "size": f.get("filesize") or f.get("filesize_approx"),
+                        "download_url": f.get("url")
+                    })
 
             return {
                 "status": "success",
@@ -319,7 +326,19 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
                     break
 
         if not selected and matching_resources:
-            selected = matching_resources[-1] if media_type == "video" else matching_resources[0]
+            if media_type == "audio":
+                # Prefer 128KBPS or highest available audio
+                selected = matching_resources[-1]
+            else:
+                # For video 'best', prefer 1080P or 720P MP4 for fast conversion and universal playback
+                mp4_resources = [r for r in matching_resources if (r.get("format") or "").upper() == "MP4"]
+                high_mp4 = [r for r in mp4_resources if str(r.get("quality", "")).upper() in ("1080P", "720P")]
+                if high_mp4:
+                    selected = high_mp4[-1]
+                elif mp4_resources:
+                    selected = mp4_resources[-1]
+                else:
+                    selected = matching_resources[-1]
 
         if not selected:
             raise ValueError("No matching media stream found")
