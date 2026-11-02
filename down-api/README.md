@@ -44,11 +44,11 @@ flowchart TD
 
 | Aapko Kya Karna Hai? | Use Karne Wala URL |
 | :--- | :--- |
-| **Video ki jaankari dekhni hai** (Title, Thumbnail, Duration, Resolutions) | `GET /api/info?url={VIDEO_URL}&engine=auto` |
-| **Direct Video Download Link chahiye** (720p / 1080p / 360p MP4) | `GET /api/download?url={VIDEO_URL}&type=video&quality=720p` |
+| **Video ki jaankari dekhni hai** (Title, Thumbnail, Duration, Resolutions) | `GET /api/info?url={VIDEO_URL}` |
+| **Direct Best Video Download Link chahiye** (Auto-selects highest quality with audio) | `GET /api/download?url={VIDEO_URL}&type=video` |
+| **Specific Resolution chahiye** (jaise 720p, 1080p, 360p) | `GET /api/download?url={VIDEO_URL}&type=video&quality=720p` |
 | **Sirf Audio / Gaana chahiye** (MP3 / M4A) | `GET /api/download?url={VIDEO_URL}&type=audio` |
-| **SaveFrom Engine se nikalna hai** | `GET /api/info?url={VIDEO_URL}&engine=savefrom` |
-| **Browser me click karte hi direct file download start karwani hai** | `GET /api/stream?url={VIDEO_URL}&type=video` |
+| **Browser me 1-click direct file download start karwani hai** | `GET /api/stream?url={VIDEO_URL}&type=video` |
 
 ---
 

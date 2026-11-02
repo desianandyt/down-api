@@ -82,7 +82,7 @@ async def log_requests_middleware(request: Request, call_next):
 
 class MediaInfoRequest(BaseModel):
     url: str
-    engine: Optional[str] = "auto"
+    engine: Optional[str] = None
 
 
 class DownloadRequest(BaseModel):
@@ -90,23 +90,23 @@ class DownloadRequest(BaseModel):
     type: Optional[str] = "video"
     quality: Optional[str] = "best"
     format: Optional[str] = None
-    engine: Optional[str] = "auto"
+    engine: Optional[str] = None
 
 
 @app.get("/")
 def home():
     return {
         "status": "online",
-        "service": "Media Downloader API (VidsSave + SaveFrom + YT-DLP)",
+        "service": "Media Downloader API",
         "uptime": f"{int(time.time() - START_TIME)}s",
-        "engines": ["vidssave", "savefrom", "yt-dlp"],
+        "features": "Automatic smart engine selection with multi-tier fallback (VidsSave -> SaveFrom -> YT-DLP)",
         "endpoints": {
-            "GET /api/info?url={video_url}&engine=auto|vidssave|savefrom|yt-dlp": "Get video metadata and available qualities",
-            "GET /api/download?url={video_url}&type=video|audio&quality=720p&engine=auto": "Get direct download link",
-            "GET /api/stream?url={video_url}&type=video|audio&engine=auto": "Direct file download stream",
-            "GET /api/logs": "Get system logs in JSON",
+            "GET /api/info?url={video_url}": "Get video metadata, thumbnail, duration, and all available qualities",
+            "GET /api/download?url={video_url}&type=video|audio&quality=best": "Get direct instant download link (auto-picks best format)",
+            "GET /api/stream?url={video_url}&type=video|audio": "1-click direct file streaming download",
+            "GET /api/logs": "Server logs and metrics in JSON",
             "GET /logs": "Live Web Logs Dashboard",
-            "GET /docs": "Swagger Interactive Documentation"
+            "GET /docs": "Interactive Swagger UI"
         }
     }
 
@@ -293,8 +293,8 @@ def _run_ytdlp_info(target_url: str):
     }
 
 
-def _process_info(target_url: str, engine: str = "auto"):
-    engine = (engine or "auto").lower()
+def _process_info(target_url: str, engine: Optional[str] = None):
+    engine = (engine or "").lower().strip()
 
     if engine == "savefrom":
         return _run_savefrom_info(target_url)
@@ -303,18 +303,18 @@ def _process_info(target_url: str, engine: str = "auto"):
     if engine in ("ytdlp", "yt-dlp"):
         return _run_ytdlp_info(target_url)
 
-    # Cascading waterfall: vidssave -> savefrom -> yt-dlp
+    # Automatic Smart Waterfall: VidsSave -> SaveFrom -> YT-DLP
     errors = []
     try:
         return _run_vidssave_info(target_url)
     except Exception as e:
-        logger.warning(f"VidsSave parse failed for {target_url}: {e}. Trying SaveFrom...")
+        logger.warning(f"VidsSave parse failed for {target_url}: {e}. Auto-switching to SaveFrom...")
         errors.append(f"vidssave: {e}")
 
     try:
         return _run_savefrom_info(target_url)
     except Exception as e:
-        logger.warning(f"SaveFrom parse failed for {target_url}: {e}. Switching to yt-dlp fallback...")
+        logger.warning(f"SaveFrom parse failed for {target_url}: {e}. Auto-switching to yt-dlp fallback...")
         errors.append(f"savefrom: {e}")
 
     try:
@@ -330,15 +330,15 @@ def _process_info(target_url: str, engine: str = "auto"):
 
 @app.get("/api/info")
 def get_info(
-    url: str = Query(..., description="Target video URL"),
-    engine: str = Query("auto", description="Extraction engine ('auto', 'vidssave', 'savefrom', 'yt-dlp')")
+    url: str = Query(..., description="Target video URL (YouTube, Shorts, Instagram, TikTok, etc.)"),
+    engine: Optional[str] = Query(None, description="Optional engine override (e.g. 'vidssave', 'savefrom', 'yt-dlp'). Default is automatic smart fallback.")
 ):
     return _process_info(url, engine=engine)
 
 
 @app.post("/api/info")
 def post_info(req: MediaInfoRequest):
-    return _process_info(req.url, engine=req.engine or "auto")
+    return _process_info(req.url, engine=req.engine)
 
 
 def _run_vidssave_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None):
@@ -432,10 +432,16 @@ def _run_ytdlp_download(target_url: str, media_type: str = "video", quality: str
     }
 
 
-def _process_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None, engine: str = "auto"):
+def _process_download(
+    target_url: str,
+    media_type: str = "video",
+    quality: str = "best",
+    output_format: Optional[str] = None,
+    engine: Optional[str] = None
+):
     media_type = (media_type or "video").lower()
     quality = (quality or "best").lower()
-    engine = (engine or "auto").lower()
+    engine = (engine or "").lower().strip()
 
     if engine == "savefrom":
         return _run_savefrom_download(target_url, media_type=media_type, quality=quality)
@@ -444,18 +450,18 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
     if engine in ("ytdlp", "yt-dlp"):
         return _run_ytdlp_download(target_url, media_type=media_type, quality=quality)
 
-    # Cascading waterfall: vidssave -> savefrom -> yt-dlp
+    # Automatic Smart Waterfall: VidsSave -> SaveFrom -> YT-DLP
     errors = []
     try:
         return _run_vidssave_download(target_url, media_type=media_type, quality=quality, output_format=output_format)
     except Exception as e:
-        logger.warning(f"VidsSave download failed for {target_url}: {e}. Trying SaveFrom...")
+        logger.warning(f"VidsSave download failed for {target_url}: {e}. Auto-switching to SaveFrom...")
         errors.append(f"vidssave: {e}")
 
     try:
         return _run_savefrom_download(target_url, media_type=media_type, quality=quality)
     except Exception as e:
-        logger.warning(f"SaveFrom download failed for {target_url}: {e}. Switching to yt-dlp fallback...")
+        logger.warning(f"SaveFrom download failed for {target_url}: {e}. Auto-switching to yt-dlp fallback...")
         errors.append(f"savefrom: {e}")
 
     try:
@@ -471,26 +477,26 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
 
 @app.get("/api/download")
 def get_download(
-    url: str = Query(..., description="Target video URL"),
+    url: str = Query(..., description="Target video URL (YouTube, Shorts, Instagram, TikTok, etc.)"),
     type: str = Query("video", description="'video' or 'audio'"),
-    quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or best)"),
+    quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or 'best')"),
     format: Optional[str] = Query(None, description="Output format (mp4, mp3)"),
-    engine: str = Query("auto", description="Extraction engine ('auto', 'vidssave', 'savefrom', 'yt-dlp')")
+    engine: Optional[str] = Query(None, description="Optional engine override ('vidssave', 'savefrom', 'yt-dlp'). Default is automatic smart fallback.")
 ):
     return _process_download(url, media_type=type, quality=quality, output_format=format, engine=engine)
 
 
 @app.post("/api/download")
 def post_download(req: DownloadRequest):
-    return _process_download(req.url, media_type=req.type, quality=req.quality, output_format=req.format, engine=req.engine or "auto")
+    return _process_download(req.url, media_type=req.type, quality=req.quality, output_format=req.format, engine=req.engine)
 
 
 @app.get("/api/stream")
 def stream_media(
     url: str = Query(..., description="Target video URL"),
     type: str = Query("video", description="'video' or 'audio'"),
-    quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or best)"),
-    engine: str = Query("auto", description="Extraction engine ('auto', 'vidssave', 'savefrom', 'yt-dlp')")
+    quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or 'best')"),
+    engine: Optional[str] = Query(None, description="Optional engine override. Default is automatic.")
 ):
     dl_info = _process_download(url, media_type=type, quality=quality, engine=engine)
     direct_url = dl_info.get("download_url")
