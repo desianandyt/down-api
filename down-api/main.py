@@ -97,24 +97,25 @@ class DownloadRequest(BaseModel):
 @app.get("/", response_model=None)
 def home(request: Request):
     accept = request.headers.get("accept", "")
-    if "text/html" in accept:
-        return HTMLResponse(get_downloader_html())
-    return {
-        "status": "online",
-        "service": "Media Downloader API",
-        "uptime": f"{int(time.time() - START_TIME)}s",
-        "features": "Automatic smart engine selection with multi-tier fallback (VidsSave -> SaveFrom -> YT-DLP)",
-        "endpoints": {
-            "GET /": "Web Downloader UI (Browser) or JSON Health Check (API)",
-            "GET /app": "Web Downloader UI Direct Link",
-            "GET /api/info?url={video_url}": "Get video metadata, thumbnail, duration, and all available qualities",
-            "GET /api/download?url={video_url}&type=video|audio&quality=best": "Get direct instant download link (auto-picks best format)",
-            "GET /api/stream?url={video_url}&type=video|audio": "1-click direct file streaming download",
-            "GET /api/logs": "Server logs and metrics in JSON",
-            "GET /logs": "Live Web Logs Dashboard",
-            "GET /docs": "Interactive Swagger UI"
+    # Return JSON only if strictly requested by an API client
+    if "application/json" in accept and "text/html" not in accept:
+        return {
+            "status": "online",
+            "service": "Media Downloader API",
+            "uptime": f"{int(time.time() - START_TIME)}s",
+            "features": "Automatic smart engine selection with multi-tier fallback (VidsSave -> SaveFrom -> YT-DLP)",
+            "endpoints": {
+                "GET /": "Web Downloader UI (Browser) or JSON Health Check (API)",
+                "GET /app": "Web Downloader UI Direct Link",
+                "GET /api/info?url={video_url}": "Get video metadata, thumbnail, duration, and all available qualities",
+                "GET /api/download?url={video_url}&type=video|audio&quality=best": "Get direct instant download link (auto-picks best format)",
+                "GET /api/stream?url={video_url}&type=video|audio": "1-click direct file streaming download",
+                "GET /api/logs": "Server logs and metrics in JSON",
+                "GET /logs": "Live Web Logs Dashboard",
+                "GET /docs": "Interactive Swagger UI"
+            }
         }
-    }
+    return HTMLResponse(get_downloader_html())
 
 
 @app.get("/app", response_class=HTMLResponse)
