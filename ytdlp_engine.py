@@ -6,7 +6,7 @@ logger = logging.getLogger("ytdlp_engine")
 
 
 def get_ytdlp_info(url: str) -> Dict[str, Any]:
-    """Extracts video metadata and formats using yt-dlp."""
+    """Extracts video metadata and formats using yt-dlp with datacenter-safe clients."""
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
@@ -14,7 +14,8 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         "socket_timeout": 12,
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "ios", "mweb"]
+                "player_client": ["tv_embedded", "mweb", "android"],
+                "player_skip": ["configs", "webpage"]
             }
         }
     }
@@ -51,7 +52,6 @@ def get_ytdlp_direct_link(url: str, media_type: str = "video", quality: Optional
             best = matched[-1] if matched else None
 
         if not best and video_formats:
-            # Pick best video format
             best = max(video_formats, key=lambda x: (x.get("height") or 0))
 
         return {
