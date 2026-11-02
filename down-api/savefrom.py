@@ -42,7 +42,7 @@ def _sign_with_node(url: str, msec: Optional[float] = None) -> Dict[str, Any]:
     cmd = [node_bin, EXTRACTOR_PATH, "sign", url]
     if msec:
         cmd.append(str(msec))
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
     if proc.returncode != 0:
         raise RuntimeError(f"Signer failed: {proc.stderr.strip() or proc.stdout.strip()}")
     return json.loads(proc.stdout.strip())
@@ -57,7 +57,7 @@ def _decrypt_with_node(js_content: str) -> Dict[str, Any]:
 
     try:
         cmd = [node_bin, EXTRACTOR_PATH, "decrypt", tf_name]
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         if proc.returncode != 0:
             raise RuntimeError(f"Decryptor failed: {proc.stderr.strip() or proc.stdout.strip()}")
         return json.loads(proc.stdout.strip())

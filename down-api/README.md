@@ -9,10 +9,35 @@
 
 | Suvidha | Link | Description |
 | :--- | :--- | :--- |
-| 🌐 **Live API Base** | [`https://down-api-fuye.onrender.com/`](https://down-api-fuye.onrender.com/) | API ka home aur health check |
+| ⚡ **Web Downloader App** | [`https://down-api-fuye.onrender.com/app`](https://down-api-fuye.onrender.com/app) | Hamara apna Web Downloader UI (Mobile & PC friendly) |
+| 🌐 **Live API Base** | [`https://down-api-fuye.onrender.com/`](https://down-api-fuye.onrender.com/) | API home / browser me direct Downloader open hota hai |
 | 🕹️ **Interactive Docs** | [`https://down-api-fuye.onrender.com/docs`](https://down-api-fuye.onrender.com/docs) | Browser se bina code likhe API try karein |
 | ⚡ **Live Logs Dashboard**| [`https://down-api-fuye.onrender.com/logs`](https://down-api-fuye.onrender.com/logs) | Server ke live requests aur proxy status |
 | 📊 **JSON Logs** | [`https://down-api-fuye.onrender.com/api/logs`](https://down-api-fuye.onrender.com/api/logs) | Server stats aur uptime JSON me |
+
+---
+
+## 📱 Hamara Apna Downloader (Web UI & CLI Tool)
+
+### 1. 🌐 Web Downloader App
+Browser me seedhe open karein:
+👉 [**https://down-api-fuye.onrender.com/**](https://down-api-fuye.onrender.com/) ya [**https://down-api-fuye.onrender.com/app**](https://down-api-fuye.onrender.com/app)
+- Link paste karein (YouTube, Shorts, Instagram Reels, TikTok, Twitter/X, Facebook)
+- ⚡ **"Download Best Video (MP4)"** ya 🎵 **"Download Audio (MP3)"** par click karein.
+- Saari available resolutions (1080p, 720p, 480p, 360p) file sizes ke saath milti hain.
+
+### 2. 💻 Python CLI Downloader Tool (`downloader.py`)
+Terminal ya Termux me direct video download karne ke liye:
+```bash
+# Video download (Auto best quality with sound)
+python downloader.py "https://youtube.com/shorts/u9TeKnWggO4"
+
+# Sirf Audio MP3 download
+python downloader.py "https://youtube.com/shorts/u9TeKnWggO4" --type audio
+
+# Manpasand quality (jaise 720p, 1080p)
+python downloader.py "https://youtube.com/shorts/u9TeKnWggO4" --quality 720p
+```
 
 ---
 
