@@ -11,9 +11,10 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         "quiet": True,
         "no_warnings": True,
         "extract_flat": False,
+        "socket_timeout": 12,
         "extractor_args": {
             "youtube": {
-                "player_client": ["ios", "android", "web", "mweb"]
+                "player_client": ["android", "ios", "mweb"]
             }
         }
     }
@@ -28,7 +29,6 @@ def get_ytdlp_direct_link(url: str, media_type: str = "video", quality: Optional
     formats = info.get("formats", [])
 
     if media_type == "audio":
-        # Find best audio format
         audio_formats = [f for f in formats if f.get("vcodec") == "none" and f.get("acodec") != "none"]
         best = max(audio_formats, key=lambda x: x.get("abr") or 0) if audio_formats else None
         if not best and formats:
@@ -43,18 +43,15 @@ def get_ytdlp_direct_link(url: str, media_type: str = "video", quality: Optional
             "quality": f"{best.get('abr', 128)}kbps" if best else "standard"
         }
     else:
-        # Video
         video_formats = [f for f in formats if f.get("vcodec") != "none"]
+        best = None
         if quality and quality.lower() != "best":
-            # Match height e.g. "720" or "720p"
             q_clean = quality.lower().replace("p", "")
             matched = [f for f in video_formats if str(f.get("height")) == q_clean]
             best = matched[-1] if matched else None
-        else:
-            best = None
 
         if not best and video_formats:
-            # Pick best video format with both audio and video or highest height
+            # Pick best video format
             best = max(video_formats, key=lambda x: (x.get("height") or 0))
 
         return {

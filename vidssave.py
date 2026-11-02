@@ -44,11 +44,17 @@ class CredentialsManager:
         self.keys = list(DEFAULT_KEYS)
         self.last_refresh = 0
 
-    def refresh(self):
+    def refresh(self, force: bool = False):
         """Scrapes vidssave.com frontend to extract new credentials dynamically."""
+        now = time.time()
+        # Cooldown of 60 seconds unless forced
+        if not force and (now - self.last_refresh < 60):
+            logger.info("Credentials refresh skipped (cooldown active)")
+            return
+
         logger.info("Fetching fresh credentials from vidssave.com...")
         try:
-            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, timeout=12)
+            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, timeout=6)
             if r.status_code != 200:
                 logger.warning(f"Could not load homepage: HTTP {r.status_code}")
                 return
@@ -59,7 +65,7 @@ class CredentialsManager:
             for chunk_url in chunks:
                 if any(k in chunk_url for k in ["1074", "6215", "layout", "page", "app"]):
                     try:
-                        js_text = requests.get(chunk_url, headers=DEFAULT_HEADERS, timeout=8).text
+                        js_text = requests.get(chunk_url, headers=DEFAULT_HEADERS, timeout=4).text
 
                         # 1. auth code
                         m_auth = re.search(r'auth:[\"\'\`]([a-zA-Z0-9_\-]+)[\"\'\`]', js_text)
@@ -88,7 +94,7 @@ class CredentialsManager:
 
             self.keys = new_keys
             self.last_refresh = time.time()
-            logger.info(f"Credentials successfully updated: auth={self.auth_code}, domain={self.domain}")
+            logger.info(f"Credentials updated: auth={self.auth_code}, domain={self.domain}")
         except Exception as e:
             logger.error(f"Failed to refresh credentials: {e}")
 
@@ -132,7 +138,7 @@ def _execute_parse(url: str) -> Dict[str, Any]:
     for ep in ENDPOINTS:
         parse_url = f"{ep['api_base']}/media/parse"
         try:
-            resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, timeout=15)
+            resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, timeout=4)
             if resp.status_code != 200:
                 continue
             res_json = resp.json()
@@ -142,7 +148,10 @@ def _execute_parse(url: str) -> Dict[str, Any]:
                     return decrypt_payload(data_field)
                 return data_field
             else:
-                last_error = res_json.get("msg") or res_json.get("status_code") or "parse_failed"
+                last_error = res_json.get("status_code") or res_json.get("msg") or "parse_failed"
+                # If Cloudflare WAF risk check triggered, stop wasting time on other endpoints
+                if last_error == "analyze_risk":
+                    break
         except Exception as e:
             last_error = str(e)
 
@@ -151,17 +160,20 @@ def _execute_parse(url: str) -> Dict[str, Any]:
 
 def parse_media(url: str) -> Dict[str, Any]:
     """
-    Parses media link. If it fails, refreshes credentials and retries automatically!
+    Parses media link. If it fails, checks if credentials need refresh, else raises error.
     """
     try:
         return _execute_parse(url)
     except Exception as e:
-        logger.warning(f"Parse failed with current credentials ({e}). Refreshing credentials and retrying...")
+        err_str = str(e)
+        if "analyze_risk" in err_str:
+            raise
+        logger.warning(f"VidsSave parse error ({err_str}), refreshing creds...")
         creds_manager.refresh()
         return _execute_parse(url)
 
 
-def _execute_download(resource_content: str, output_format: Optional[str] = None, timeout: int = 35) -> Dict[str, Any]:
+def _execute_download(resource_content: str, output_format: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
     payload = {
         "hostname": "vidssave.com",
         "auth": creds_manager.auth_code,
@@ -175,7 +187,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     for ep in ENDPOINTS:
         download_url = f"{ep['api_base']}/media/download"
         try:
-            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, timeout=15)
+            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, timeout=5)
             if resp.status_code != 200:
                 continue
             res_json = resp.json()
@@ -219,7 +231,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
                                         redirect_link,
                                         headers={"User-Agent": DEFAULT_HEADERS["User-Agent"]},
                                         allow_redirects=False,
-                                        timeout=10
+                                        timeout=6
                                     )
                                     final_link = head_resp.headers.get("Location") or redirect_link
                                 except Exception:
@@ -238,13 +250,5 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     raise TimeoutError("SSE connection ended without download_link")
 
 
-def resolve_download_link(resource_content: str, output_format: Optional[str] = None, timeout: int = 35) -> Dict[str, Any]:
-    """
-    Resolves download link. Automatically refreshes credentials and retries on failure!
-    """
-    try:
-        return _execute_download(resource_content, output_format=output_format, timeout=timeout)
-    except Exception as e:
-        logger.warning(f"Download link resolution failed ({e}). Refreshing credentials and retrying...")
-        creds_manager.refresh()
-        return _execute_download(resource_content, output_format=output_format, timeout=timeout)
+def resolve_download_link(resource_content: str, output_format: Optional[str] = None, timeout: int = 20) -> Dict[str, Any]:
+    return _execute_download(resource_content, output_format=output_format, timeout=timeout)

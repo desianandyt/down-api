@@ -1,25 +1,56 @@
+import datetime
 import logging
+import time
 import urllib.parse
+from collections import deque
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, HttpUrl
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from pydantic import BaseModel
 import requests
 
 import vidssave
 import ytdlp_engine
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# --- In-Memory Ring Buffer Logging ---
+class RingBufferLogHandler(logging.Handler):
+    def __init__(self, maxlen: int = 250):
+        super().__init__()
+        self.logs = deque(maxlen=maxlen)
+
+    def emit(self, record):
+        try:
+            entry = {
+                "timestamp": datetime.datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S"),
+                "level": record.levelname,
+                "name": record.name,
+                "message": record.getMessage()
+            }
+            if record.exc_info:
+                entry["exception"] = self.format(record)
+            self.logs.append(entry)
+        except Exception:
+            self.handleError(record)
+
+
+log_handler = RingBufferLogHandler()
+log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(log_handler)
+
 logger = logging.getLogger("api")
+START_TIME = time.time()
+REQUEST_STATS = {"total": 0, "success": 0, "errors": 0}
 
 app = FastAPI(
-    title="Media Downloader API (VidsSave Wrapper)",
-    description="High-speed REST API wrapper for downloading Video and Audio from YouTube, Instagram, Facebook, TikTok, Twitter/X, and more.",
-    version="1.0.0"
+    title="Media Downloader API",
+    description="High-speed REST API wrapper for downloading Video and Audio with live logs and monitoring.",
+    version="1.1.0"
 )
 
-# Enable CORS for frontend integrations
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,72 +60,166 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def log_requests_middleware(request: Request, call_next):
+    REQUEST_STATS["total"] += 1
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        process_time = (time.time() - start_time) * 1000
+        REQUEST_STATS["success"] += 1
+        # Skip logging internal log polling to prevent log clutter
+        if not request.url.path.startswith("/api/logs"):
+            logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({process_time:.1f}ms)")
+        return response
+    except Exception as e:
+        REQUEST_STATS["errors"] += 1
+        logger.error(f"{request.method} {request.url.path} FAILED: {str(e)}")
+        raise
+
+
 class MediaInfoRequest(BaseModel):
     url: str
 
 
 class DownloadRequest(BaseModel):
     url: str
-    type: Optional[str] = "video"  # "video" or "audio"
+    type: Optional[str] = "video"
     quality: Optional[str] = "best"
     format: Optional[str] = None
-
-
-@app.get("/api/debug")
-def debug():
-    import traceback
-    try:
-        ip_info = requests.get("https://api.ipify.org?format=json", timeout=5).json()
-    except Exception as e:
-        ip_info = {"error": str(e)}
-
-    results = {}
-    for ep in vidssave.ENDPOINTS:
-        test_payload = {
-            "hostname": "vidssave.com",
-            "auth": vidssave.creds_manager.auth_code,
-            "domain": vidssave.creds_manager.domain,
-            "origin": "source",
-            "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        }
-        try:
-            r = requests.post(f"{ep['api_base']}/media/parse", data=test_payload, headers=vidssave.DEFAULT_HEADERS, timeout=6)
-            results[ep["name"]] = {"status_code": r.status_code, "text": r.text[:200]}
-        except Exception as e:
-            results[ep["name"]] = {"error": str(e)}
-
-    return {
-        "render_ip": ip_info,
-        "credentials": {
-            "auth": vidssave.creds_manager.auth_code,
-            "domain": vidssave.creds_manager.domain,
-            "keys_count": len(vidssave.creds_manager.keys)
-        },
-        "endpoints_test": results
-    }
 
 
 @app.get("/")
 def home():
     return {
-        "message": "Welcome to VidsSave Media Downloader API",
-        "docs": "/docs",
+        "status": "online",
+        "service": "Media Downloader API",
+        "uptime": f"{int(time.time() - START_TIME)}s",
         "endpoints": {
             "GET /api/info?url={video_url}": "Get video metadata and available qualities",
-            "POST /api/info": "Get metadata via JSON body {'url': '...'}",
             "GET /api/download?url={video_url}&type=video|audio&quality=720p": "Get direct download link",
-            "POST /api/download": "Get direct download link via JSON body",
-            "GET /api/stream?url={video_url}&type=video|audio": "Directly download/stream the file"
+            "GET /api/stream?url={video_url}&type=video|audio": "Direct file download stream",
+            "GET /api/logs": "Get system logs in JSON",
+            "GET /logs": "Live Web Logs Dashboard",
+            "GET /docs": "Swagger Interactive Documentation"
         }
     }
 
 
+# --- Logs Endpoints ---
+@app.get("/api/logs")
+def get_logs(limit: int = Query(50, ge=1, le=250), level: Optional[str] = Query(None)):
+    """Returns server logs in JSON format."""
+    entries = list(log_handler.logs)
+    if level:
+        level_upper = level.upper()
+        entries = [log for log in entries if log["level"] == level_upper]
+    entries = entries[-limit:]
+    entries.reverse()
+
+    return {
+        "server_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "uptime_seconds": int(time.time() - START_TIME),
+        "stats": REQUEST_STATS,
+        "credentials": {
+            "auth": vidssave.creds_manager.auth_code,
+            "domain": vidssave.creds_manager.domain,
+            "last_refresh": int(time.time() - vidssave.creds_manager.last_refresh) if vidssave.creds_manager.last_refresh else "never"
+        },
+        "count": len(entries),
+        "logs": entries
+    }
+
+
+@app.get("/logs", response_class=HTMLResponse)
+def logs_dashboard():
+    """Live web-based visual log dashboard."""
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>API Live Logs & Monitoring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: monospace, Consolas, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px; }
+    h1 { margin: 0; font-size: 20px; color: #38bdf8; }
+    .stats { display: flex; gap: 15px; font-size: 13px; color: #94a3b8; }
+    .badge { background: #1e293b; padding: 4px 10px; border-radius: 6px; border: 1px solid #334155; }
+    .logs-container { background: #020617; border-radius: 8px; border: 1px solid #1e293b; padding: 15px; height: 75vh; overflow-y: auto; }
+    .log-row { padding: 6px 0; border-bottom: 1px solid #0f172a; font-size: 13px; display: flex; gap: 10px; }
+    .log-time { color: #64748b; min-width: 150px; }
+    .log-level { font-weight: bold; min-width: 60px; }
+    .level-INFO { color: #38bdf8; }
+    .level-WARNING { color: #fbbf24; }
+    .level-ERROR { color: #f87171; }
+    .log-msg { color: #e2e8f0; word-break: break-all; }
+    .btn { background: #38bdf8; color: #020617; border: none; padding: 6px 14px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    .btn:hover { background: #7dd3fc; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>⚡ Live Server Logs & Metrics</h1>
+      <div id="stats" class="stats" style="margin-top: 8px;">Loading stats...</div>
+    </div>
+    <div>
+      <button class="btn" onclick="fetchLogs()">🔄 Refresh Now</button>
+      <a href="/docs" target="_blank" style="color: #38bdf8; margin-left: 10px; font-size: 14px;">Swagger Docs &rarr;</a>
+    </div>
+  </div>
+  <div class="logs-container" id="logsBox">Connecting...</div>
+
+  <script>
+    async function fetchLogs() {
+      try {
+        const res = await fetch('/api/logs?limit=100');
+        const data = await res.json();
+        
+        document.getElementById('stats').innerHTML = `
+          <span class="badge">Uptime: <b>${data.uptime_seconds}s</b></span>
+          <span class="badge">Total Requests: <b>${data.stats.total}</b></span>
+          <span class="badge">Success: <b style="color:#4ade80;">${data.stats.success}</b></span>
+          <span class="badge">Errors: <b style="color:#f87171;">${data.stats.errors}</b></span>
+          <span class="badge">Auth: <b>${data.credentials.auth}</b></span>
+        `;
+
+        const box = document.getElementById('logsBox');
+        if (!data.logs || data.logs.length === 0) {
+          box.innerHTML = '<div style="color: #64748b; padding: 20px;">No logs captured yet.</div>';
+          return;
+        }
+
+        box.innerHTML = data.logs.map(log => `
+          <div class="log-row">
+            <span class="log-time">${log.timestamp}</span>
+            <span class="log-level level-${log.level}">[${log.level}]</span>
+            <span class="log-msg">${escapeHtml(log.message)}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    fetchLogs();
+    setInterval(fetchLogs, 3000);
+  </script>
+</body>
+</html>"""
+
+
+# --- Core Logic ---
 def _process_info(target_url: str):
-    # Try VidsSave first
     try:
         vs_data = vidssave.parse_media(target_url)
         resources = vs_data.get("resources", [])
-        
+
         videos = []
         audios = []
         for r in resources:
@@ -111,6 +236,7 @@ def _process_info(target_url: str):
                 videos.append(item)
 
         return {
+            "status": "success",
             "engine": "vidssave",
             "id": vs_data.get("id"),
             "title": vs_data.get("title"),
@@ -120,31 +246,40 @@ def _process_info(target_url: str):
             "audios": audios
         }
     except Exception as e:
-        logger.warning(f"VidsSave parse failed ({e}), falling back to yt-dlp...")
+        logger.warning(f"VidsSave parse failed: {e}. Switching to resilient yt-dlp engine...")
         try:
             ydl_data = ytdlp_engine.get_ytdlp_info(target_url)
+            formats = ydl_data.get("formats", [])
+            videos = []
+            audios = []
+            for f in formats:
+                res_val = f.get("resolution") or (f"{f.get('height')}p" if f.get("height") else None)
+                item = {
+                    "quality": res_val or f.get("format_note") or "standard",
+                    "format": f.get("ext"),
+                    "size": f.get("filesize") or f.get("filesize_approx"),
+                    "download_url": f.get("url")
+                }
+                if f.get("vcodec") == "none":
+                    audios.append(item)
+                else:
+                    videos.append(item)
+
             return {
+                "status": "success",
                 "engine": "yt-dlp",
                 "id": ydl_data.get("id"),
                 "title": ydl_data.get("title"),
                 "duration": ydl_data.get("duration"),
                 "thumbnail": ydl_data.get("thumbnail"),
-                "formats": [
-                    {
-                        "format_id": f.get("format_id"),
-                        "ext": f.get("ext"),
-                        "resolution": f.get("resolution"),
-                        "filesize": f.get("filesize"),
-                        "url": f.get("url")
-                    }
-                    for f in ydl_data.get("formats", [])
-                    if f.get("url")
-                ]
+                "videos": videos[:15],
+                "audios": audios[:10]
             }
         except Exception as ydl_err:
+            logger.error(f"Both engines failed for {target_url}: {ydl_err}")
             raise HTTPException(
                 status_code=400,
-                detail=f"Failed to fetch media information: {str(e)} | Fallback error: {str(ydl_err)}"
+                detail=f"Unable to parse video: {str(e)} | Fallback: {str(ydl_err)}"
             )
 
 
@@ -189,9 +324,8 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
         if not selected:
             raise ValueError("No matching media stream found")
 
-        # Check if direct url is provided
+        # If direct url is available
         if selected.get("download_url"):
-            direct_url = selected["download_url"]
             return {
                 "status": "success",
                 "engine": "vidssave",
@@ -202,10 +336,9 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
                 "quality": selected.get("quality"),
                 "format": selected.get("format"),
                 "filesize": selected.get("size"),
-                "download_url": direct_url
+                "download_url": selected["download_url"]
             }
 
-        # Otherwise resolve via SSE download endpoint
         resolved = vidssave.resolve_download_link(
             resource_content=selected["resource_content"],
             output_format=output_format or selected.get("format", "").lower()
@@ -225,7 +358,7 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
         }
 
     except Exception as e:
-        logger.warning(f"VidsSave download flow failed ({e}), attempting yt-dlp fallback...")
+        logger.warning(f"VidsSave download failed: {e}. Switching to yt-dlp fallback...")
         try:
             res = ytdlp_engine.get_ytdlp_direct_link(target_url, media_type=media_type, quality=quality)
             if not res.get("direct_url"):
@@ -243,9 +376,10 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
                 "download_url": res.get("direct_url")
             }
         except Exception as ydl_err:
+            logger.error(f"Both engines failed download for {target_url}: {ydl_err}")
             raise HTTPException(
                 status_code=400,
-                detail=f"Download failed: {str(e)} | Fallback error: {str(ydl_err)}"
+                detail=f"Download failed: {str(e)} | Fallback: {str(ydl_err)}"
             )
 
 
@@ -270,9 +404,6 @@ def stream_media(
     type: str = Query("video", description="'video' or 'audio'"),
     quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or best)")
 ):
-    """
-    Streams file bytes directly to the browser / client as a download attachment.
-    """
     dl_info = _process_download(url, media_type=type, quality=quality)
     direct_url = dl_info.get("download_url")
 
@@ -281,7 +412,7 @@ def stream_media(
 
     headers = {"User-Agent": vidssave.DEFAULT_HEADERS["User-Agent"]}
     r = requests.get(direct_url, headers=headers, stream=True)
-    
+
     clean_title = "".join(c for c in dl_info.get("title", "media") if c.isalnum() or c in (" ", "-", "_")).strip()
     ext = dl_info.get("format") or ("mp3" if type == "audio" else "mp4")
     filename = f"{clean_title}.{ext.lower()}"
