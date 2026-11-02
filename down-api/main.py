@@ -12,6 +12,7 @@ import requests
 
 import vidssave
 import ytdlp_engine
+import savefrom
 from proxy_manager import proxy_pool
 
 # --- In-Memory Ring Buffer Logging ---
@@ -81,6 +82,7 @@ async def log_requests_middleware(request: Request, call_next):
 
 class MediaInfoRequest(BaseModel):
     url: str
+    engine: Optional[str] = "auto"
 
 
 class DownloadRequest(BaseModel):
@@ -88,18 +90,20 @@ class DownloadRequest(BaseModel):
     type: Optional[str] = "video"
     quality: Optional[str] = "best"
     format: Optional[str] = None
+    engine: Optional[str] = "auto"
 
 
 @app.get("/")
 def home():
     return {
         "status": "online",
-        "service": "Media Downloader API",
+        "service": "Media Downloader API (VidsSave + SaveFrom + YT-DLP)",
         "uptime": f"{int(time.time() - START_TIME)}s",
+        "engines": ["vidssave", "savefrom", "yt-dlp"],
         "endpoints": {
-            "GET /api/info?url={video_url}": "Get video metadata and available qualities",
-            "GET /api/download?url={video_url}&type=video|audio&quality=720p": "Get direct download link",
-            "GET /api/stream?url={video_url}&type=video|audio": "Direct file download stream",
+            "GET /api/info?url={video_url}&engine=auto|vidssave|savefrom|yt-dlp": "Get video metadata and available qualities",
+            "GET /api/download?url={video_url}&type=video|audio&quality=720p&engine=auto": "Get direct download link",
+            "GET /api/stream?url={video_url}&type=video|audio&engine=auto": "Direct file download stream",
             "GET /api/logs": "Get system logs in JSON",
             "GET /logs": "Live Web Logs Dashboard",
             "GET /docs": "Swagger Interactive Documentation"
@@ -217,154 +221,163 @@ def logs_dashboard():
 
 
 # --- Core Logic ---
-def _process_info(target_url: str):
-    try:
-        vs_data = vidssave.parse_media(target_url)
-        resources = vs_data.get("resources", [])
+def _run_vidssave_info(target_url: str):
+    vs_data = vidssave.parse_media(target_url)
+    resources = vs_data.get("resources", [])
 
-        videos = []
-        audios = []
-        for r in resources:
-            item = {
-                "quality": r.get("quality"),
-                "format": r.get("format"),
-                "size": r.get("size"),
-                "resource_id": r.get("resource_content"),
-                "direct_url": r.get("download_url")
-            }
-            if r.get("type") == "audio":
-                audios.append(item)
-            else:
-                videos.append(item)
-
-        return {
-            "status": "success",
-            "engine": "vidssave",
-            "id": vs_data.get("id"),
-            "title": vs_data.get("title"),
-            "duration": vs_data.get("duration"),
-            "thumbnail": vs_data.get("thumbnail"),
-            "videos": videos,
-            "audios": audios
+    videos = []
+    audios = []
+    for r in resources:
+        item = {
+            "quality": r.get("quality"),
+            "format": r.get("format"),
+            "size": r.get("size"),
+            "resource_id": r.get("resource_content"),
+            "direct_url": r.get("download_url")
         }
-    except Exception as e:
-        logger.warning(f"VidsSave parse failed: {e}. Switching to resilient yt-dlp engine...")
-        try:
-            ydl_data = ytdlp_engine.get_ytdlp_info(target_url)
-            formats = ydl_data.get("formats", [])
-            videos = []
-            audios = []
-            for f in formats:
-                if f.get("ext") in ("mhtml", "jpg", "jpeg", "webp"):
-                    continue
-                if f.get("vcodec") == "none" and f.get("acodec") and f.get("acodec") != "none":
-                    res_val = f"{int(f.get('abr'))}kbps" if f.get("abr") else (f.get("format_note") or "audio")
-                    audios.append({
-                        "quality": res_val,
-                        "format": f.get("ext"),
-                        "size": f.get("filesize") or f.get("filesize_approx"),
-                        "download_url": f.get("url")
-                    })
-                elif f.get("vcodec") and f.get("vcodec") != "none":
-                    res_val = f.get("resolution") or (f"{f.get('height')}p" if f.get("height") else None)
-                    videos.append({
-                        "quality": res_val or f.get("format_note") or "video",
-                        "format": f.get("ext"),
-                        "size": f.get("filesize") or f.get("filesize_approx"),
-                        "download_url": f.get("url")
-                    })
+        if r.get("type") == "audio":
+            audios.append(item)
+        else:
+            videos.append(item)
 
-            return {
-                "status": "success",
-                "engine": "yt-dlp",
-                "id": ydl_data.get("id"),
-                "title": ydl_data.get("title"),
-                "duration": ydl_data.get("duration"),
-                "thumbnail": ydl_data.get("thumbnail"),
-                "videos": videos[:15],
-                "audios": audios[:10]
-            }
-        except Exception as ydl_err:
-            logger.error(f"Both engines failed for {target_url}: {ydl_err}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unable to parse video: {str(e)} | Fallback: {str(ydl_err)}"
-            )
+    return {
+        "status": "success",
+        "engine": "vidssave",
+        "id": vs_data.get("id"),
+        "title": vs_data.get("title"),
+        "duration": vs_data.get("duration"),
+        "thumbnail": vs_data.get("thumbnail"),
+        "videos": videos,
+        "audios": audios
+    }
+
+
+def _run_savefrom_info(target_url: str):
+    return savefrom.parse_media(target_url)
+
+
+def _run_ytdlp_info(target_url: str):
+    ydl_data = ytdlp_engine.get_ytdlp_info(target_url)
+    formats = ydl_data.get("formats", [])
+    videos = []
+    audios = []
+    for f in formats:
+        if f.get("ext") in ("mhtml", "jpg", "jpeg", "webp"):
+            continue
+        if f.get("vcodec") == "none" and f.get("acodec") and f.get("acodec") != "none":
+            res_val = f"{int(f.get('abr'))}kbps" if f.get("abr") else (f.get("format_note") or "audio")
+            audios.append({
+                "quality": res_val,
+                "format": f.get("ext"),
+                "size": f.get("filesize") or f.get("filesize_approx"),
+                "download_url": f.get("url")
+            })
+        elif f.get("vcodec") and f.get("vcodec") != "none":
+            res_val = f.get("resolution") or (f"{f.get('height')}p" if f.get("height") else None)
+            videos.append({
+                "quality": res_val or f.get("format_note") or "video",
+                "format": f.get("ext"),
+                "size": f.get("filesize") or f.get("filesize_approx"),
+                "download_url": f.get("url")
+            })
+
+    return {
+        "status": "success",
+        "engine": "yt-dlp",
+        "id": ydl_data.get("id"),
+        "title": ydl_data.get("title"),
+        "duration": ydl_data.get("duration"),
+        "thumbnail": ydl_data.get("thumbnail"),
+        "videos": videos[:15],
+        "audios": audios[:10]
+    }
+
+
+def _process_info(target_url: str, engine: str = "auto"):
+    engine = (engine or "auto").lower()
+
+    if engine == "savefrom":
+        return _run_savefrom_info(target_url)
+    if engine == "vidssave":
+        return _run_vidssave_info(target_url)
+    if engine in ("ytdlp", "yt-dlp"):
+        return _run_ytdlp_info(target_url)
+
+    # Cascading waterfall: vidssave -> savefrom -> yt-dlp
+    errors = []
+    try:
+        return _run_vidssave_info(target_url)
+    except Exception as e:
+        logger.warning(f"VidsSave parse failed for {target_url}: {e}. Trying SaveFrom...")
+        errors.append(f"vidssave: {e}")
+
+    try:
+        return _run_savefrom_info(target_url)
+    except Exception as e:
+        logger.warning(f"SaveFrom parse failed for {target_url}: {e}. Switching to yt-dlp fallback...")
+        errors.append(f"savefrom: {e}")
+
+    try:
+        return _run_ytdlp_info(target_url)
+    except Exception as e:
+        logger.error(f"All 3 engines failed for {target_url}: {e}")
+        errors.append(f"yt-dlp: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unable to parse media: {' | '.join(errors)}"
+        )
 
 
 @app.get("/api/info")
-def get_info(url: str = Query(..., description="Target video URL")):
-    return _process_info(url)
+def get_info(
+    url: str = Query(..., description="Target video URL"),
+    engine: str = Query("auto", description="Extraction engine ('auto', 'vidssave', 'savefrom', 'yt-dlp')")
+):
+    return _process_info(url, engine=engine)
 
 
 @app.post("/api/info")
 def post_info(req: MediaInfoRequest):
-    return _process_info(req.url)
+    return _process_info(req.url, engine=req.engine or "auto")
 
 
-def _process_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None):
-    media_type = (media_type or "video").lower()
-    quality = (quality or "best").lower()
+def _run_vidssave_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None):
+    vs_data = vidssave.parse_media(target_url)
+    resources = vs_data.get("resources", [])
+    title = vs_data.get("title", "download")
+    thumbnail = vs_data.get("thumbnail")
+    duration = vs_data.get("duration")
 
-    # 1. Try VidsSave API
-    try:
-        vs_data = vidssave.parse_media(target_url)
-        resources = vs_data.get("resources", [])
-        title = vs_data.get("title", "download")
-        thumbnail = vs_data.get("thumbnail")
-        duration = vs_data.get("duration")
+    matching_resources = [r for r in resources if r.get("type") == media_type]
+    if not matching_resources:
+        matching_resources = resources
 
-        matching_resources = [r for r in resources if r.get("type") == media_type]
-        if not matching_resources:
-            matching_resources = resources
+    selected = None
+    if quality != "best":
+        q_clean = quality.upper().replace("P", "")
+        for r in matching_resources:
+            rq = str(r.get("quality", "")).upper().replace("P", "")
+            if rq == q_clean:
+                selected = r
+                break
 
-        selected = None
-        if quality != "best":
-            q_clean = quality.upper().replace("P", "")
-            for r in matching_resources:
-                rq = str(r.get("quality", "")).upper().replace("P", "")
-                if rq == q_clean:
-                    selected = r
-                    break
-
-        if not selected and matching_resources:
-            if media_type == "audio":
-                # Prefer 128KBPS or highest available audio
-                selected = matching_resources[-1]
+    if not selected and matching_resources:
+        if media_type == "audio":
+            selected = matching_resources[-1]
+        else:
+            mp4_resources = [r for r in matching_resources if (r.get("format") or "").upper() == "MP4"]
+            high_mp4 = [r for r in mp4_resources if str(r.get("quality", "")).upper() in ("1080P", "720P")]
+            if high_mp4:
+                selected = high_mp4[-1]
+            elif mp4_resources:
+                selected = mp4_resources[-1]
             else:
-                # For video 'best', prefer 1080P or 720P MP4 for fast conversion and universal playback
-                mp4_resources = [r for r in matching_resources if (r.get("format") or "").upper() == "MP4"]
-                high_mp4 = [r for r in mp4_resources if str(r.get("quality", "")).upper() in ("1080P", "720P")]
-                if high_mp4:
-                    selected = high_mp4[-1]
-                elif mp4_resources:
-                    selected = mp4_resources[-1]
-                else:
-                    selected = matching_resources[-1]
+                selected = matching_resources[-1]
 
-        if not selected:
-            raise ValueError("No matching media stream found")
+    if not selected:
+        raise ValueError("No matching media stream found on VidsSave")
 
-        # If direct url is available
-        if selected.get("download_url"):
-            return {
-                "status": "success",
-                "engine": "vidssave",
-                "title": title,
-                "thumbnail": thumbnail,
-                "duration": duration,
-                "type": media_type,
-                "quality": selected.get("quality"),
-                "format": selected.get("format"),
-                "filesize": selected.get("size"),
-                "download_url": selected["download_url"]
-            }
-
-        resolved = vidssave.resolve_download_link(
-            resource_content=selected["resource_content"],
-            output_format=output_format or selected.get("format", "").lower()
-        )
-
+    if selected.get("download_url"):
         return {
             "status": "success",
             "engine": "vidssave",
@@ -374,34 +387,86 @@ def _process_download(target_url: str, media_type: str = "video", quality: str =
             "type": media_type,
             "quality": selected.get("quality"),
             "format": selected.get("format"),
-            "filesize": resolved.get("filesize") or selected.get("size"),
-            "download_url": resolved.get("direct_url") or resolved.get("download_link")
+            "filesize": selected.get("size"),
+            "download_url": selected["download_url"]
         }
 
+    resolved = vidssave.resolve_download_link(
+        resource_content=selected["resource_content"],
+        output_format=output_format or selected.get("format", "").lower()
+    )
+
+    return {
+        "status": "success",
+        "engine": "vidssave",
+        "title": title,
+        "thumbnail": thumbnail,
+        "duration": duration,
+        "type": media_type,
+        "quality": selected.get("quality"),
+        "format": selected.get("format"),
+        "filesize": resolved.get("filesize") or selected.get("size"),
+        "download_url": resolved.get("direct_url") or resolved.get("download_link")
+    }
+
+
+def _run_savefrom_download(target_url: str, media_type: str = "video", quality: str = "best"):
+    return savefrom.get_direct_download(target_url, media_type=media_type, quality=quality)
+
+
+def _run_ytdlp_download(target_url: str, media_type: str = "video", quality: str = "best"):
+    res = ytdlp_engine.get_ytdlp_direct_link(target_url, media_type=media_type, quality=quality)
+    if not res.get("direct_url"):
+        raise ValueError("Could not extract direct stream URL via yt-dlp")
+    return {
+        "status": "success",
+        "engine": "yt-dlp",
+        "title": res.get("title"),
+        "thumbnail": res.get("thumbnail"),
+        "duration": res.get("duration"),
+        "type": media_type,
+        "quality": res.get("quality"),
+        "format": res.get("format"),
+        "filesize": res.get("filesize"),
+        "download_url": res.get("direct_url")
+    }
+
+
+def _process_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None, engine: str = "auto"):
+    media_type = (media_type or "video").lower()
+    quality = (quality or "best").lower()
+    engine = (engine or "auto").lower()
+
+    if engine == "savefrom":
+        return _run_savefrom_download(target_url, media_type=media_type, quality=quality)
+    if engine == "vidssave":
+        return _run_vidssave_download(target_url, media_type=media_type, quality=quality, output_format=output_format)
+    if engine in ("ytdlp", "yt-dlp"):
+        return _run_ytdlp_download(target_url, media_type=media_type, quality=quality)
+
+    # Cascading waterfall: vidssave -> savefrom -> yt-dlp
+    errors = []
+    try:
+        return _run_vidssave_download(target_url, media_type=media_type, quality=quality, output_format=output_format)
     except Exception as e:
-        logger.warning(f"VidsSave download failed: {e}. Switching to yt-dlp fallback...")
-        try:
-            res = ytdlp_engine.get_ytdlp_direct_link(target_url, media_type=media_type, quality=quality)
-            if not res.get("direct_url"):
-                raise ValueError("Could not extract direct stream URL")
-            return {
-                "status": "success",
-                "engine": "yt-dlp",
-                "title": res.get("title"),
-                "thumbnail": res.get("thumbnail"),
-                "duration": res.get("duration"),
-                "type": media_type,
-                "quality": res.get("quality"),
-                "format": res.get("format"),
-                "filesize": res.get("filesize"),
-                "download_url": res.get("direct_url")
-            }
-        except Exception as ydl_err:
-            logger.error(f"Both engines failed download for {target_url}: {ydl_err}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Download failed: {str(e)} | Fallback: {str(ydl_err)}"
-            )
+        logger.warning(f"VidsSave download failed for {target_url}: {e}. Trying SaveFrom...")
+        errors.append(f"vidssave: {e}")
+
+    try:
+        return _run_savefrom_download(target_url, media_type=media_type, quality=quality)
+    except Exception as e:
+        logger.warning(f"SaveFrom download failed for {target_url}: {e}. Switching to yt-dlp fallback...")
+        errors.append(f"savefrom: {e}")
+
+    try:
+        return _run_ytdlp_download(target_url, media_type=media_type, quality=quality)
+    except Exception as e:
+        logger.error(f"All 3 engines failed download for {target_url}: {e}")
+        errors.append(f"yt-dlp: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Download failed: {' | '.join(errors)}"
+        )
 
 
 @app.get("/api/download")
@@ -409,23 +474,25 @@ def get_download(
     url: str = Query(..., description="Target video URL"),
     type: str = Query("video", description="'video' or 'audio'"),
     quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or best)"),
-    format: Optional[str] = Query(None, description="Output format (mp4, mp3)")
+    format: Optional[str] = Query(None, description="Output format (mp4, mp3)"),
+    engine: str = Query("auto", description="Extraction engine ('auto', 'vidssave', 'savefrom', 'yt-dlp')")
 ):
-    return _process_download(url, media_type=type, quality=quality, output_format=format)
+    return _process_download(url, media_type=type, quality=quality, output_format=format, engine=engine)
 
 
 @app.post("/api/download")
 def post_download(req: DownloadRequest):
-    return _process_download(req.url, media_type=req.type, quality=req.quality, output_format=req.format)
+    return _process_download(req.url, media_type=req.type, quality=req.quality, output_format=req.format, engine=req.engine or "auto")
 
 
 @app.get("/api/stream")
 def stream_media(
     url: str = Query(..., description="Target video URL"),
     type: str = Query("video", description="'video' or 'audio'"),
-    quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or best)")
+    quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or best)"),
+    engine: str = Query("auto", description="Extraction engine ('auto', 'vidssave', 'savefrom', 'yt-dlp')")
 ):
-    dl_info = _process_download(url, media_type=type, quality=quality)
+    dl_info = _process_download(url, media_type=type, quality=quality, engine=engine)
     direct_url = dl_info.get("download_url")
 
     if not direct_url:

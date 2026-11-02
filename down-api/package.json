@@ -1,0 +1,12 @@
+{
+  "name": "down-api",
+  "version": "1.2.0",
+  "description": "Multi-engine Media Downloader API supporting VidsSave, SaveFrom, and YT-DLP",
+  "main": "savefrom_extractor.js",
+  "scripts": {
+    "start": "python3 -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+  },
+  "dependencies": {
+    "jsdom": "^26.0.0"
+  }
+}

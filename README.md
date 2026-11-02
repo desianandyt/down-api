@@ -19,18 +19,24 @@
 ## 🧒 Bilkul Aasan Bhasha Me: Yeh Kaam Kaise Karta Hai?
 
 ```mermaid
-flowchart LR
-    A["👤 Aap (User)"] -->|"1. Link diya (YouTube/Insta)"| B["⚡ Hamari Downloader API"]
-    B -->|"2. VidsSave Engine (10 Proxies)"| C{"Kaam Ho Gaya?"}
-    C -->|"Haan (Supersonic Speed)"| E["🎉 Direct Download Link"]
-    C -->|"Cloudflare Block/Delay"| D["🤖 yt-dlp Resilient Engine"]
-    D --> E
-    E -->|"3. Direct MP4 / MP3 File"| A
+flowchart TD
+    A["👤 Aap (User)"] -->|"1. Link diya (YouTube/Insta)"| B["⚡ Downloader API"]
+    B --> C{"Engine Waterfall"}
+    C -->|"Engine 1 (Ultra-fast)"| D["🚀 VidsSave (10 Proxies)"]
+    C -->|"Engine 2 (SaveFrom REA)"| E["💎 SaveFrom Engine (Direct CDN)"]
+    C -->|"Engine 3 (Deep Fallback)"| F["🤖 yt-dlp Resilient Engine"]
+    D --> G["🎉 Direct Download Link"]
+    E --> G
+    F --> G
+    G -->|"Direct MP4 / MP3 File"| A
 ```
 
 1. **Aapne URL diya** (Example: YouTube Shorts ya Video ka link).
-2. **API ne process kiya**: Pehle high-speed VidsSave engine use hota hai 10 residential proxies ke saath. Agar wahan koi delay ho to turant backup yt-dlp engine sambhal leta hai.
-3. **Aapko Download Link mil gaya**: Browser ya app me click karte hi video ya audio save ho jaati hai!
+2. **Multi-Engine Waterfall**:
+   - **Engine 1: VidsSave** (10 Residential Proxies ke saath fast API).
+   - **Engine 2: SaveFrom** (Reverse-engineered SaveFrom.net client signature + decryptor bina captcha ke).
+   - **Engine 3: yt-dlp** (Datacenter-safe Android/VisionOS client fallback).
+3. **Aapko Download Link mil gaya**: Browser ya app me click karte hi direct streamable video ya audio save ho jaati hai!
 
 ---
 
@@ -38,9 +44,10 @@ flowchart LR
 
 | Aapko Kya Karna Hai? | Use Karne Wala URL |
 | :--- | :--- |
-| **Video ki jaankari dekhni hai** (Title, Thumbnail, Duration, Resolutions) | `GET /api/info?url={VIDEO_URL}` |
-| **Direct Video Download Link chahiye** (720p / 1080p MP4) | `GET /api/download?url={VIDEO_URL}&type=video&quality=720p` |
-| **Sirf Audio / Gaana chahiye** (MP3) | `GET /api/download?url={VIDEO_URL}&type=audio` |
+| **Video ki jaankari dekhni hai** (Title, Thumbnail, Duration, Resolutions) | `GET /api/info?url={VIDEO_URL}&engine=auto` |
+| **Direct Video Download Link chahiye** (720p / 1080p / 360p MP4) | `GET /api/download?url={VIDEO_URL}&type=video&quality=720p` |
+| **Sirf Audio / Gaana chahiye** (MP3 / M4A) | `GET /api/download?url={VIDEO_URL}&type=audio` |
+| **SaveFrom Engine se nikalna hai** | `GET /api/info?url={VIDEO_URL}&engine=savefrom` |
 | **Browser me click karte hi direct file download start karwani hai** | `GET /api/stream?url={VIDEO_URL}&type=video` |
 
 ---
