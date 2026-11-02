@@ -2,33 +2,38 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-// Resilient JSDOM loader across environments (Local, Render, Termux)
-let JSDOM;
-const possiblePaths = [
-    'jsdom',
-    path.join(__dirname, 'node_modules', 'jsdom'),
-    '/data/data/com.termux/files/usr/lib/node_modules/jsdom',
-    '/tmp/node_modules/jsdom'
-];
+let JSDOM = null;
+function getJSDOM() {
+    if (JSDOM) return JSDOM;
+    const possiblePaths = [
+        'jsdom',
+        path.join(__dirname, 'node_modules', 'jsdom'),
+        '/data/data/com.termux/files/usr/lib/node_modules/jsdom',
+        '/tmp/node_modules/jsdom'
+    ];
 
-for (const p of possiblePaths) {
-    try {
-        JSDOM = require(p).JSDOM;
-        if (JSDOM) break;
-    } catch (e) {}
-}
+    for (const p of possiblePaths) {
+        try {
+            JSDOM = require(p).JSDOM;
+            if (JSDOM) return JSDOM;
+        } catch (e) {}
+    }
 
-if (!JSDOM) {
     try {
         const { execSync } = require('child_process');
         const globalRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
         JSDOM = require(path.join(globalRoot, 'jsdom')).JSDOM;
+        if (JSDOM) return JSDOM;
     } catch (e) {}
-}
 
-if (!JSDOM) {
-    console.error(JSON.stringify({ error: 'JSDOM module could not be loaded. Run: npm install -g jsdom or npm install jsdom' }));
-    process.exit(1);
+    try {
+        const { execSync } = require('child_process');
+        execSync('npm install --prefix /tmp jsdom --no-save', { stdio: 'ignore', timeout: 90000 });
+        JSDOM = require('/tmp/node_modules/jsdom').JSDOM;
+        if (JSDOM) return JSDOM;
+    } catch (e) {}
+
+    throw new Error('JSDOM module could not be loaded. Please install jsdom: npm install jsdom');
 }
 
 let reqBuilderCode = null;
@@ -157,7 +162,8 @@ function decryptResponse(jsResponse) {
         jsResponse = jsResponse.replace(target2, replacement2);
     }
 
-    const dom = new JSDOM(`<!DOCTYPE html><html><head></head><body><div id="sf_result">loading</div></body></html>`, {
+    const JSDOMClass = getJSDOM();
+    const dom = new JSDOMClass(`<!DOCTYPE html><html><head></head><body><div id="sf_result">loading</div></body></html>`, {
         url: 'https://en1.savefrom.net/19wr/',
         runScripts: 'dangerously'
     });

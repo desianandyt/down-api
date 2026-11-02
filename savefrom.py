@@ -13,16 +13,27 @@ logger = logging.getLogger("savefrom")
 EXTRACTOR_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "savefrom_extractor.js")
 
 
+import threading
+
 def _ensure_jsdom():
     """Ensures jsdom is installed in /tmp if not found."""
     if not shutil.which("node") or not shutil.which("npm"):
         return
     try:
-        if not os.path.exists("/tmp/node_modules/jsdom"):
-            logger.info("Installing jsdom in /tmp for SaveFrom engine...")
-            subprocess.run(["npm", "install", "--prefix", "/tmp", "jsdom", "--no-save"], capture_output=True, timeout=60)
+        # Fast check if already installed
+        if os.path.exists("/tmp/node_modules/jsdom"):
+            return
+        r = subprocess.run(["node", "-e", "require('jsdom')"], capture_output=True, timeout=5)
+        if r.returncode == 0:
+            return
+        logger.info("Auto-installing jsdom in /tmp for SaveFrom engine...")
+        subprocess.run(["npm", "install", "--prefix", "/tmp", "jsdom", "--no-save"], capture_output=True, timeout=90)
+        logger.info("jsdom installed successfully in /tmp!")
     except Exception as e:
         logger.warning(f"Error checking/installing jsdom: {e}")
+
+# Run in background thread so it doesn't block server startup
+threading.Thread(target=_ensure_jsdom, daemon=True).start()
 
 
 def _sign_with_node(url: str, msec: Optional[float] = None) -> Dict[str, Any]:
