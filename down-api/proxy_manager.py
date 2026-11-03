@@ -5,21 +5,13 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger("proxy_manager")
 
-BUILTIN_PROXIES = [
-    "http://qlezdepm:sennijjqf08p@45.38.107.97:6014",
-    "http://qlezdepm:sennijjqf08p@64.137.96.74:6641",
-    "http://qlezdepm:sennijjqf08p@198.23.243.226:6361",
-    "http://qlezdepm:sennijjqf08p@38.154.185.97:6370",
-    "http://qlezdepm:sennijjqf08p@84.247.60.125:6095",
-    "http://qlezdepm:sennijjqf08p@191.96.254.138:6185",
-    "http://qlezdepm:sennijjqf08p@198.46.161.42:5092",
-    "http://qlezdepm:sennijjqf08p@64.137.10.153:5803",
-    "http://qlezdepm:sennijjqf08p@104.164.49.38:7693",
-    "http://qlezdepm:sennijjqf08p@23.26.71.145:5628"
-]
-
 
 class ProxyPool:
+    """
+    ProxyPool handles proxy rotation.
+    By default, it operates in pure ZERO-PROXY (DIRECT) mode for maximum speed and 100% free usage.
+    If the user supplies custom proxies via PROXY_LIST or PROXY_URL, it rotates them.
+    """
     def __init__(self):
         self.proxies: List[str] = []
         self._index = 0
@@ -42,12 +34,12 @@ class ProxyPool:
                         parsed.append(f"http://{parts[0]}:{parts[1]}")
             if parsed:
                 self.proxies = parsed
-                logger.info(f"Loaded {len(self.proxies)} proxies from environment")
+                logger.info(f"Loaded {len(self.proxies)} custom proxies from environment")
                 return
 
-        # 2. Use built-in proxies
-        self.proxies = list(BUILTIN_PROXIES)
-        logger.info(f"Loaded {len(self.proxies)} built-in rotation proxies")
+        # 2. Pure Zero-Proxy (Direct) Mode by default
+        self.proxies = []
+        logger.info("Running in ZERO-PROXY Direct Mode (0 cost, ultra-fast native direct connections)")
 
     def get_proxy(self) -> Optional[str]:
         if not self.proxies:
@@ -67,6 +59,16 @@ class ProxyPool:
 
     def get_all(self) -> List[str]:
         return list(self.proxies)
+
+    @property
+    def is_direct(self) -> bool:
+        return len(self.proxies) == 0
+
+    @property
+    def status_summary(self) -> str:
+        if self.is_direct:
+            return "Zero-Proxy (Direct High-Speed)"
+        return f"{len(self.proxies)} active custom proxies"
 
 
 proxy_pool = ProxyPool()

@@ -107,12 +107,12 @@ def extract_raw(url: str) -> Dict[str, Any]:
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    # 3. Post to worker with residential proxy
+    # 3. Post to worker (Zero-Proxy Direct mode by default, or with custom proxies)
     worker_url = "https://worker.savefrom.net/savefrom.php"
     last_err = None
 
-    # Try up to 3 proxy attempts
-    for attempt in range(3):
+    max_attempts = 1 if proxy_pool.is_direct else min(3, len(proxy_pool.get_all()))
+    for attempt in range(max_attempts):
         cur_proxies = proxy_pool.get_dict()
         try:
             resp = requests.post(worker_url, data=payload, headers=headers, proxies=cur_proxies, timeout=12)
@@ -121,7 +121,7 @@ def extract_raw(url: str) -> Dict[str, Any]:
                 # Successfully received encrypted JS response
                 return _decrypt_with_node(text)
             elif "<!DOCTYPE" in text or "<html" in text:
-                logger.warning(f"SaveFrom attempt {attempt+1} got HTML challenge from proxy {cur_proxies}. Retrying with next proxy...")
+                logger.warning(f"SaveFrom attempt {attempt+1} got HTML challenge. Falling back...")
                 continue
             else:
                 last_err = f"Unexpected response (status {resp.status_code}): {text[:200]}"

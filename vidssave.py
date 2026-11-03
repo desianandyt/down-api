@@ -64,7 +64,7 @@ class CredentialsManager:
 
         logger.info("Fetching fresh credentials from vidssave.com...")
         try:
-            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, proxies=proxy_pool.get_dict(), timeout=6)
+            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, proxies=proxy_pool.get_dict(), timeout=10)
             if r.status_code != 200:
                 logger.warning(f"Could not load homepage: HTTP {r.status_code}")
                 return
@@ -75,7 +75,7 @@ class CredentialsManager:
             for chunk_url in chunks:
                 if any(k in chunk_url for k in ["1074", "6215", "layout", "page", "app"]):
                     try:
-                        js_text = requests.get(chunk_url, headers=DEFAULT_HEADERS, timeout=4).text
+                        js_text = requests.get(chunk_url, headers=DEFAULT_HEADERS, timeout=6).text
 
                         # 1. auth code
                         m_auth = re.search(r'auth:[\"\'\`]([a-zA-Z0-9_\-]+)[\"\'\`]', js_text)
@@ -146,13 +146,14 @@ def _execute_parse(url: str) -> Dict[str, Any]:
 
     last_error = None
     num_proxies = max(1, len(proxy_pool.get_all()))
-    # Try up to 3 different rotating proxies
-    for _ in range(min(3, num_proxies)):
+    max_attempts = 1 if proxy_pool.is_direct else min(3, num_proxies)
+    # Zero-proxy direct mode by default; or rotate custom proxies if provided
+    for _ in range(max_attempts):
         proxies = proxy_pool.get_dict()
         for ep in ENDPOINTS:
             parse_url = f"{ep['api_base']}/media/parse"
             try:
-                resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=5)
+                resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12)
                 if resp.status_code != 200:
                     continue
                 res_json = resp.json()
@@ -199,7 +200,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     for ep in ENDPOINTS:
         download_url = f"{ep['api_base']}/media/download"
         try:
-            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=5)
+            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12)
             if resp.status_code != 200:
                 continue
             res_json = resp.json()

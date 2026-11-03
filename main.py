@@ -13,6 +13,7 @@ import requests
 import vidssave
 import ytdlp_engine
 import savefrom
+import tikwm
 from proxy_manager import proxy_pool
 from frontend import get_downloader_html
 
@@ -103,7 +104,7 @@ def home(request: Request):
             "status": "online",
             "service": "Media Downloader API",
             "uptime": f"{int(time.time() - START_TIME)}s",
-            "features": "Automatic smart engine selection with multi-tier fallback (VidsSave -> SaveFrom -> YT-DLP)",
+            "features": "100% Free Zero-Proxy Smart Engine with Multi-Tier Fallback (TikWM -> VidsSave -> SaveFrom -> YT-DLP)",
             "endpoints": {
                 "GET /": "Web Downloader UI (Browser) or JSON Health Check (API)",
                 "GET /app": "Web Downloader UI Direct Link",
@@ -139,13 +140,14 @@ def get_logs(limit: int = Query(50, ge=1, le=250), level: Optional[str] = Query(
     return {
         "server_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "uptime_seconds": int(time.time() - START_TIME),
+        "network_mode": proxy_pool.status_summary,
+        "proxies_count": len(proxy_pool.get_all()),
         "stats": REQUEST_STATS,
         "credentials": {
             "auth": vidssave.creds_manager.auth_code,
             "domain": vidssave.creds_manager.domain,
             "last_refresh": int(time.time() - vidssave.creds_manager.last_refresh) if vidssave.creds_manager.last_refresh else "never"
         },
-        "proxies_count": len(proxy_pool.get_all()),
         "count": len(entries),
         "logs": entries
     }
@@ -199,7 +201,7 @@ def logs_dashboard():
         
         document.getElementById('stats').innerHTML = `
           <span class="badge">Uptime: <b>${data.uptime_seconds}s</b></span>
-          <span class="badge">Proxies: <b style="color:#38bdf8;">${data.proxies_count || 0} active</b></span>
+          <span class="badge">Engine: <b style="color:#38bdf8;">${data.network_mode || 'Zero-Proxy Direct'}</b></span>
           <span class="badge">Total: <b>${data.stats.total}</b></span>
           <span class="badge">Success: <b style="color:#4ade80;">${data.stats.success}</b></span>
           <span class="badge">Errors: <b style="color:#f87171;">${data.stats.errors}</b></span>
@@ -394,6 +396,8 @@ def _run_ytdlp_info(target_url: str):
 def _process_info(target_url: str, engine: Optional[str] = None):
     engine = (engine or "").lower().strip()
 
+    if engine == "tikwm":
+        return tikwm.parse_tiktok(target_url)
     if engine == "savefrom":
         return _run_savefrom_info(target_url)
     if engine == "vidssave":
@@ -401,7 +405,14 @@ def _process_info(target_url: str, engine: Optional[str] = None):
     if engine in ("ytdlp", "yt-dlp"):
         return _run_ytdlp_info(target_url)
 
-    # Automatic Smart Waterfall: VidsSave -> SaveFrom -> YT-DLP
+    # 1. Zero-Proxy TikTok Handler (Instant <500ms HD No-Watermark)
+    if tikwm.is_tiktok_url(target_url):
+        try:
+            return tikwm.parse_tiktok(target_url)
+        except Exception as e:
+            logger.warning(f"TikWM parse failed for {target_url}: {e}. Falling back to multi-engine waterfall...")
+
+    # 2. Automatic Smart Waterfall: VidsSave -> SaveFrom -> YT-DLP (All Zero-Proxy Ready)
     errors = []
     try:
         return _run_vidssave_info(target_url)
@@ -418,7 +429,7 @@ def _process_info(target_url: str, engine: Optional[str] = None):
     try:
         return _run_ytdlp_info(target_url)
     except Exception as e:
-        logger.error(f"All 3 engines failed for {target_url}: {e}")
+        logger.error(f"All engines failed for {target_url}: {e}")
         errors.append(f"yt-dlp: {e}")
         raise HTTPException(
             status_code=400,
@@ -541,6 +552,8 @@ def _process_download(
     quality = (quality or "best").lower()
     engine = (engine or "").lower().strip()
 
+    if engine == "tikwm":
+        return tikwm.get_tiktok_download(target_url, media_type=media_type, quality=quality)
     if engine == "savefrom":
         return _run_savefrom_download(target_url, media_type=media_type, quality=quality)
     if engine == "vidssave":
@@ -548,7 +561,14 @@ def _process_download(
     if engine in ("ytdlp", "yt-dlp"):
         return _run_ytdlp_download(target_url, media_type=media_type, quality=quality)
 
-    # Automatic Smart Waterfall: VidsSave -> SaveFrom -> YT-DLP
+    # 1. Zero-Proxy TikTok Handler
+    if tikwm.is_tiktok_url(target_url):
+        try:
+            return tikwm.get_tiktok_download(target_url, media_type=media_type, quality=quality)
+        except Exception as e:
+            logger.warning(f"TikWM download failed for {target_url}: {e}. Falling back to multi-engine waterfall...")
+
+    # 2. Automatic Smart Waterfall: VidsSave -> SaveFrom -> YT-DLP
     errors = []
     try:
         return _run_vidssave_download(target_url, media_type=media_type, quality=quality, output_format=output_format)

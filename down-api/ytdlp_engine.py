@@ -9,15 +9,20 @@ logger = logging.getLogger("ytdlp_engine")
 
 
 def get_ytdlp_info(url: str) -> Dict[str, Any]:
-    """Extracts video metadata and formats using yt-dlp with datacenter-safe clients."""
+    """Extracts video metadata and formats using yt-dlp with datacenter-safe clients (Zero-Proxy ready)."""
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "extract_flat": False,
-        "socket_timeout": 12,
+        "socket_timeout": 15,
+        "geo_bypass": True,
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9"
+        },
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "visionos"]
+                "player_client": ["android", "ios", "mweb", "visionos", "tv_embedded"]
             }
         }
     }

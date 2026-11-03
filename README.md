@@ -45,22 +45,25 @@ python downloader.py "https://youtube.com/shorts/u9TeKnWggO4" --quality 720p
 
 ```mermaid
 flowchart TD
-    A["👤 Aap (User)"] -->|"1. Link diya (YouTube/Insta)"| B["⚡ Downloader API"]
-    B --> C{"Engine Waterfall"}
-    C -->|"Engine 1 (Ultra-fast)"| D["🚀 VidsSave (10 Proxies)"]
-    C -->|"Engine 2 (SaveFrom REA)"| E["💎 SaveFrom Engine (Direct CDN)"]
-    C -->|"Engine 3 (Deep Fallback)"| F["🤖 yt-dlp Resilient Engine"]
-    D --> G["🎉 Direct Download Link"]
-    E --> G
-    F --> G
-    G -->|"Direct MP4 / MP3 File"| A
+    A["👤 Aap (User)"] -->|"1. Link diya (YouTube/TikTok/Insta)"| B["⚡ Downloader API"]
+    B --> C{"Zero-Proxy Waterfall"}
+    C -->|"TikTok Priority (<0.5s)"| D["🎵 TikWM Dedicated Engine"]
+    C -->|"Engine 1 (Ultra-fast)"| E["🚀 VidsSave (Direct CDN)"]
+    C -->|"Engine 2 (SaveFrom REA)"| F["💎 SaveFrom Engine (Direct CDN)"]
+    C -->|"Engine 3 (Deep Fallback)"| G["🤖 yt-dlp Resilient Engine"]
+    D --> H["🎉 Direct Download Link"]
+    E --> H
+    F --> H
+    G --> H
+    H -->|"Direct MP4 / MP3 File"| A
 ```
 
-1. **Aapne URL diya** (Example: YouTube Shorts ya Video ka link).
-2. **Multi-Engine Waterfall**:
-   - **Engine 1: VidsSave** (10 Residential Proxies ke saath fast API).
+1. **Aapne URL diya** (Example: YouTube, Shorts, TikTok, Instagram, Twitter link).
+2. **Multi-Engine Zero-Proxy Waterfall**:
+   - **TikTok Engine: TikWM** (Zero proxy, 1080p no-watermark & MP3 instant extraction).
+   - **Engine 1: VidsSave** (Zero-proxy high-speed direct CDN stream generator).
    - **Engine 2: SaveFrom** (Reverse-engineered SaveFrom.net client signature + decryptor bina captcha ke).
-   - **Engine 3: yt-dlp** (Datacenter-safe Android/VisionOS client fallback).
+   - **Engine 3: yt-dlp** (Datacenter-safe Android/iOS/VisionOS client fallback).
 3. **Aapko Download Link mil gaya**: Browser ya app me click karte hi direct streamable video ya audio save ho jaati hai!
 
 ---
@@ -303,11 +306,13 @@ Aap is code ko `index.html` naam se save karke kisi bhi browser me open kar sakt
 
 ## 🛡️ Backend Architecture (Kyun Yeh API Kabhi Band Nahi Hoti?)
 
-1. **Dual Extraction Architecture:**
-   - **Primary Engine (VidsSave):** Next.js backend se reverse-engineered AES-CBC decryption aur server-sent events (SSE) task processing.
-   - **Secondary Engine (yt-dlp Resilient):** Agar primary engine delay kare to background me `android` & `visionos` clients bina kisi Cloudflare ya bot error ke fallback provide karte hain.
-2. **10 Built-In Rotating Residential Proxies:**
-   - Cloud datacenter blocks (`analyze_risk`) ko rokne ke liye har request automatically 10 high-speed proxies ke beech round-robin rotate hoti hai.
-   - Kisi ek proxy par timeout aane par bina user ko error dikhaye turant agli proxy auto-failover karti hai.
+1. **Zero-Proxy High-Speed Direct Mode:**
+   - 100% Free architecture: Kisi paid ya expiring proxy par depend nahi karta. Direct connection se zero proxy latency aur instant response milta hai.
+   - Agar aap apna personal proxy use karna chahte hain toh `PROXY_URL` environment variable se add kar sakte hain.
+2. **Multi-Engine Extraction Architecture:**
+   - **TikTok Engine (TikWM):** Zero-proxy instant HD download (no watermark).
+   - **Primary Engine (VidsSave):** Next.js backend se reverse-engineered AES-CBC decryption aur server-sent events (SSE) direct task processing.
+   - **Secondary Engine (SaveFrom):** Node.js sandbox signing + direct CDN streaming.
+   - **Deep Fallback (yt-dlp):** Mobile API clients (`android`, `ios`, `mweb`, `visionos`, `tv_embedded`) jo datacenter cloud me bhi bot check bypass karte hain.
 3. **In-Memory Ring Buffer Logging:**
    - Har request ka latency, status code aur error track hota hai jise bina database ke `/logs` dashboard par realtime dekha ja sakta hai.
