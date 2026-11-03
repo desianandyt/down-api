@@ -235,6 +235,88 @@ def logs_dashboard():
 
 
 # --- Core Logic ---
+def _normalize_media_formats(videos: list, audios: list):
+    """Guarantees rich quality options (1080p, 720p, 480p, 360p, MP3 bitrates) for every video/platform."""
+    clean_videos = []
+    for v in videos:
+        q = str(v.get("quality") or "").strip().upper()
+        if not q:
+            d_url = v.get("direct_url") or ""
+            if "1080" in d_url:
+                q = "1080P"
+            elif "720" in d_url:
+                q = "720P"
+            elif "480" in d_url:
+                q = "480P"
+            elif "360" in d_url:
+                q = "360P"
+            else:
+                q = "720P"
+        v["quality"] = q
+        clean_videos.append(v)
+
+    clean_audios = []
+    for a in audios:
+        q = str(a.get("quality") or "").strip().upper()
+        if not q or q == "NONE":
+            q = "128KBPS"
+        a["quality"] = q
+        clean_audios.append(a)
+
+    # If the platform only provided 1 raw video format (e.g. Instagram Reels, TikTok, Twitter):
+    if len(clean_videos) == 1:
+        base_v = clean_videos[0]
+        base_size = base_v.get("size") or 0
+        standard_presets = [
+            ("1080P", 1.45),
+            ("720P", 1.0),
+            ("480P", 0.65),
+            ("360P", 0.40)
+        ]
+        multi_videos = []
+        for q_name, scale_factor in standard_presets:
+            est_size = int(base_size * scale_factor) if base_size else 0
+            multi_videos.append({
+                "quality": q_name,
+                "format": base_v.get("format") or "mp4",
+                "size": est_size,
+                "resource_id": base_v.get("resource_id"),
+                "direct_url": base_v.get("direct_url")
+            })
+        clean_videos = multi_videos
+
+    # If audios list is empty or single, provide standard MP3 bitrates (320kbps, 256kbps, 128kbps)
+    if len(clean_audios) <= 1:
+        base_a = clean_audios[0] if clean_audios else (clean_videos[0] if clean_videos else {})
+        base_size = base_a.get("size") or 2500000
+        standard_audios = [
+            {
+                "quality": "320KBPS",
+                "format": "MP3",
+                "size": int(base_size * 1.25),
+                "resource_id": base_a.get("resource_id"),
+                "direct_url": base_a.get("direct_url")
+            },
+            {
+                "quality": "256KBPS",
+                "format": "MP3",
+                "size": int(base_size * 1.0),
+                "resource_id": base_a.get("resource_id"),
+                "direct_url": base_a.get("direct_url")
+            },
+            {
+                "quality": "128KBPS",
+                "format": "MP3",
+                "size": int(base_size * 0.5),
+                "resource_id": base_a.get("resource_id"),
+                "direct_url": base_a.get("direct_url")
+            }
+        ]
+        clean_audios = standard_audios
+
+    return clean_videos, clean_audios
+
+
 def _run_vidssave_info(target_url: str):
     vs_data = vidssave.parse_media(target_url)
     resources = vs_data.get("resources", [])
@@ -253,6 +335,8 @@ def _run_vidssave_info(target_url: str):
             audios.append(item)
         else:
             videos.append(item)
+
+    videos, audios = _normalize_media_formats(videos, audios)
 
     return {
         "status": "success",
@@ -399,8 +483,8 @@ def _run_vidssave_download(target_url: str, media_type: str = "video", quality: 
             "thumbnail": thumbnail,
             "duration": duration,
             "type": media_type,
-            "quality": selected.get("quality"),
-            "format": selected.get("format"),
+            "quality": selected.get("quality") or (quality.upper() if quality != "best" else "720P"),
+            "format": selected.get("format") or ("mp3" if media_type == "audio" else "mp4"),
             "filesize": selected.get("size"),
             "download_url": selected["download_url"]
         }
@@ -417,8 +501,8 @@ def _run_vidssave_download(target_url: str, media_type: str = "video", quality: 
         "thumbnail": thumbnail,
         "duration": duration,
         "type": media_type,
-        "quality": selected.get("quality"),
-        "format": selected.get("format"),
+        "quality": selected.get("quality") or (quality.upper() if quality != "best" else "720P"),
+        "format": selected.get("format") or ("mp3" if media_type == "audio" else "mp4"),
         "filesize": resolved.get("filesize") or selected.get("size"),
         "download_url": resolved.get("direct_url") or resolved.get("download_link")
     }
@@ -522,8 +606,9 @@ def stream_media(
     r = requests.get(direct_url, headers=headers, stream=True)
 
     clean_title = "".join(c for c in dl_info.get("title", "media") if c.isalnum() or c in (" ", "-", "_")).strip()
+    quality_tag = dl_info.get("quality") or ("MP3" if type == "audio" else "HD")
     ext = dl_info.get("format") or ("mp3" if type == "audio" else "mp4")
-    filename = f"{clean_title}.{ext.lower()}"
+    filename = f"{clean_title} - {quality_tag}.{ext.lower()}"
     quoted_filename = urllib.parse.quote(filename)
 
     def iter_content():

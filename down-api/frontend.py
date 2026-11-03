@@ -462,50 +462,118 @@ def get_downloader_html() -> str:
       text-transform: uppercase;
     }
 
-    /* Fast Action Row */
-    .instant-bar {
-      display: flex;
-      gap: 12px;
+    /* Quality Selector in Search Bar */
+    .quality-select-input {
+      background: rgba(14, 20, 34, 0.9);
+      border: 1px solid var(--border-subtle);
+      color: var(--cyan-neon);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 11px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .quality-select-input:hover, .quality-select-input:focus {
+      border-color: var(--cyan-neon);
+      background: rgba(17, 24, 39, 1);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+    .quality-select-input option {
+      background: #0b0f19;
+      color: #fff;
+    }
+
+    /* Quality Action Station */
+    .quality-station {
       margin-top: 16px;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+    }
+    .qs-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .qs-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--cyan-neon);
+      letter-spacing: 0.8px;
+    }
+    .qs-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .qs-pills {
+      display: flex;
+      gap: 10px;
       flex-wrap: wrap;
     }
-    .btn-instant-best {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #fff;
-      border: none;
-      padding: 12px 22px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
+    .pill-btn {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 8px 14px;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-      transition: all 0.2s;
-    }
-    .btn-instant-best:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
-    }
-    .btn-instant-audio {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      color: #fff;
-      border: none;
-      padding: 12px 22px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 800;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
       transition: all 0.2s;
     }
-    .btn-instant-audio:hover {
+    .pill-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+    .pill-1080:hover {
+      border-color: var(--cyan-neon);
+      box-shadow: 0 4px 18px var(--cyan-glow);
+    }
+    .pill-720:hover {
+      border-color: var(--emerald-neon);
+      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+    }
+    .pill-480:hover, .pill-360:hover {
+      border-color: var(--violet-neon);
+      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
+    }
+    .pill-audio:hover {
+      border-color: var(--indigo-neon);
+      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+    }
+    .pill-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .pill-badge.fhd {
+      background: rgba(6, 182, 212, 0.2);
+      color: var(--cyan-neon);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+    .pill-badge.hd {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--emerald-neon);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .pill-badge.sd {
+      background: rgba(139, 92, 246, 0.2);
+      color: var(--violet-neon);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+    .pill-badge.audio {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
     }
 
     /* Segmented Filter Control */
@@ -831,6 +899,14 @@ def get_downloader_html() -> str:
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             Paste
           </button>
+          <select id="targetQuality" class="quality-select-input" title="Choose Preferred Quality">
+            <option value="best" selected>⚡ Auto (Best)</option>
+            <option value="1080P">💎 1080p FHD</option>
+            <option value="720P">✨ 720p HD</option>
+            <option value="480P">📺 480p SD</option>
+            <option value="360P">📱 360p</option>
+            <option value="320KBPS">🎵 320k MP3</option>
+          </select>
           <button type="submit" id="extractBtn" class="btn-main-fetch">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             <span>Analyze Link</span>
@@ -875,17 +951,41 @@ def get_downloader_html() -> str:
               <h2 id="cardTitle" class="media-title">Video Title</h2>
               <div class="media-badges">
                 <span id="cardEngine" class="badge-item badge-engine">ENGINE: SMART AUTO</span>
-                <span id="cardTotalStreams" class="badge-item">9 Qualities Available</span>
+                <span id="cardTotalStreams" class="badge-item">Multi-Quality Options</span>
                 <span class="badge-item">⚡ 0-Second Ad-Free</span>
               </div>
             </div>
-            <div class="instant-bar">
-              <button id="btnQuickBestVideo" class="btn-instant-best" onclick="downloadSelectedStream(currentSelectedQuality)">
-                ⚡ Download Best Video (MP4)
-              </button>
-              <button id="btnQuickBestAudio" class="btn-instant-audio" onclick="downloadBestAudio()">
-                🎵 Download Audio (MP3)
-              </button>
+            <div class="quality-station">
+              <div class="qs-title-row">
+                <span class="qs-title">🎯 INSTANT QUALITY DOWNLOADS:</span>
+                <span class="qs-hint">Direct 1-Click Stream</span>
+              </div>
+              <div class="qs-pills" id="qualityPillsContainer">
+                <button type="button" class="pill-btn pill-1080" onclick="triggerQualityDownload('1080P', 'video')">
+                  <span class="pill-badge fhd">1080P</span>
+                  <span class="pill-label">Full HD MP4</span>
+                </button>
+                <button type="button" class="pill-btn pill-720" onclick="triggerQualityDownload('720P', 'video')">
+                  <span class="pill-badge hd">720P</span>
+                  <span class="pill-label">HD MP4</span>
+                </button>
+                <button type="button" class="pill-btn pill-480" onclick="triggerQualityDownload('480P', 'video')">
+                  <span class="pill-badge sd">480P</span>
+                  <span class="pill-label">Standard MP4</span>
+                </button>
+                <button type="button" class="pill-btn pill-360" onclick="triggerQualityDownload('360P', 'video')">
+                  <span class="pill-badge sd">360P</span>
+                  <span class="pill-label">Data Saver</span>
+                </button>
+                <button type="button" class="pill-btn pill-audio" onclick="triggerQualityDownload('320KBPS', 'audio')">
+                  <span class="pill-badge audio">320K</span>
+                  <span class="pill-label">Ultra MP3</span>
+                </button>
+                <button type="button" class="pill-btn pill-audio" onclick="triggerQualityDownload('128KBPS', 'audio')">
+                  <span class="pill-badge audio">128K</span>
+                  <span class="pill-label">Standard MP3</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
