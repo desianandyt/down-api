@@ -22,7 +22,7 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         },
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "ios", "mweb", "visionos", "tv_embedded"]
+                "player_client": ["android", "android_creator"]
             }
         }
     }
@@ -30,9 +30,19 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
     if proxy:
         ydl_opts["proxy"] = proxy
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        return ydl.sanitize_info(info)
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return ydl.sanitize_info(info)
+    except Exception as e:
+        fallback_proxy = proxy_pool.get_fallback_proxy()
+        if fallback_proxy and fallback_proxy != proxy:
+            logger.info(f"yt-dlp direct failed: {e}. Retrying with free public fallback proxy...")
+            ydl_opts["proxy"] = fallback_proxy
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                return ydl.sanitize_info(info)
+        raise
 
 
 def get_ytdlp_direct_link(url: str, media_type: str = "video", quality: Optional[str] = None) -> Dict[str, Any]:

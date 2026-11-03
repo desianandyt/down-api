@@ -145,11 +145,13 @@ def _execute_parse(url: str) -> Dict[str, Any]:
     }
 
     last_error = None
-    num_proxies = max(1, len(proxy_pool.get_all()))
-    max_attempts = 1 if proxy_pool.is_direct else min(3, num_proxies)
-    # Zero-proxy direct mode by default; or rotate custom proxies if provided
-    for _ in range(max_attempts):
-        proxies = proxy_pool.get_dict()
+    proxy_attempts = [proxy_pool.get_dict()]
+    fallback_p = proxy_pool.get_fallback_dict()
+    if fallback_p and fallback_p != proxy_attempts[0]:
+        proxy_attempts.append(fallback_p)
+
+    # 1. Try Direct first. 2. If analyze_risk or blocked on datacenter, retry with free fallback proxy.
+    for proxies in proxy_attempts:
         for ep in ENDPOINTS:
             parse_url = f"{ep['api_base']}/media/parse"
             try:
@@ -196,70 +198,75 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     if output_format:
         payload["output"] = output_format
 
-    proxies = proxy_pool.get_dict()
-    for ep in ENDPOINTS:
-        download_url = f"{ep['api_base']}/media/download"
-        try:
-            resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12)
-            if resp.status_code != 200:
+    proxy_attempts = [proxy_pool.get_dict()]
+    fallback_p = proxy_pool.get_fallback_dict()
+    if fallback_p and fallback_p != proxy_attempts[0]:
+        proxy_attempts.append(fallback_p)
+
+    for proxies in proxy_attempts:
+        for ep in ENDPOINTS:
+            download_url = f"{ep['api_base']}/media/download"
+            try:
+                resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12)
+                if resp.status_code != 200:
+                    continue
+                res_json = resp.json()
+                if res_json.get("status") != 1:
+                    continue
+
+                raw_data = res_json.get("data")
+                data = decrypt_payload(raw_data) if isinstance(raw_data, str) else raw_data
+                task_id = data.get("task_id")
+                if not task_id:
+                    continue
+
+                # Listen to SSE download_query
+                task_id_enc = urllib.parse.quote(task_id)
+                sse_url = (
+                    f"{ep['sse_base']}/media/download_query"
+                    f"?auth={creds_manager.auth_query}&domain={creds_manager.domain}&task_id={task_id_enc}"
+                    f"&download_domain=vidssave.com&origin=content_site"
+                )
+
+                sse_headers = {
+                    "Accept": "text/event-stream",
+                    "User-Agent": DEFAULT_HEADERS["User-Agent"],
+                    "Origin": DEFAULT_HEADERS["Origin"],
+                    "Referer": DEFAULT_HEADERS["Referer"]
+                }
+
+                with requests.get(sse_url, headers=sse_headers, proxies=proxies, stream=True, timeout=timeout) as sse_resp:
+                    for line in sse_resp.iter_lines():
+                        if not line:
+                            continue
+                        line_str = line.decode("utf-8")
+                        if line_str.startswith("data:"):
+                            payload_str = line_str[5:].strip()
+                            try:
+                                event_data = json.loads(payload_str)
+                                if event_data.get("status") == "success" and event_data.get("download_link"):
+                                    redirect_link = event_data["download_link"]
+                                    try:
+                                        head_resp = requests.get(
+                                            redirect_link,
+                                            headers={"User-Agent": DEFAULT_HEADERS["User-Agent"]},
+                                            proxies=proxies,
+                                            allow_redirects=False,
+                                            timeout=6
+                                        )
+                                        final_link = head_resp.headers.get("Location") or redirect_link
+                                    except Exception:
+                                        final_link = redirect_link
+
+                                    event_data["direct_url"] = final_link
+                                    return event_data
+                                elif event_data.get("status") == "failed":
+                                    raise ValueError(f"Conversion task failed: {event_data}")
+                            except json.JSONDecodeError:
+                                pass
+            except Exception as e:
+                logger.warning(f"Download endpoint {ep['api_base']} error: {e}")
                 continue
-            res_json = resp.json()
-            if res_json.get("status") != 1:
-                continue
-
-            raw_data = res_json.get("data")
-            data = decrypt_payload(raw_data) if isinstance(raw_data, str) else raw_data
-            task_id = data.get("task_id")
-            if not task_id:
-                continue
-
-            # Listen to SSE download_query
-            task_id_enc = urllib.parse.quote(task_id)
-            sse_url = (
-                f"{ep['sse_base']}/media/download_query"
-                f"?auth={creds_manager.auth_query}&domain={creds_manager.domain}&task_id={task_id_enc}"
-                f"&download_domain=vidssave.com&origin=content_site"
-            )
-
-            sse_headers = {
-                "Accept": "text/event-stream",
-                "User-Agent": DEFAULT_HEADERS["User-Agent"],
-                "Origin": DEFAULT_HEADERS["Origin"],
-                "Referer": DEFAULT_HEADERS["Referer"]
-            }
-
-            with requests.get(sse_url, headers=sse_headers, proxies=proxies, stream=True, timeout=timeout) as sse_resp:
-                for line in sse_resp.iter_lines():
-                    if not line:
-                        continue
-                    line_str = line.decode("utf-8")
-                    if line_str.startswith("data:"):
-                        payload_str = line_str[5:].strip()
-                        try:
-                            event_data = json.loads(payload_str)
-                            if event_data.get("status") == "success" and event_data.get("download_link"):
-                                redirect_link = event_data["download_link"]
-                                try:
-                                    head_resp = requests.get(
-                                        redirect_link,
-                                        headers={"User-Agent": DEFAULT_HEADERS["User-Agent"]},
-                                        proxies=proxies,
-                                        allow_redirects=False,
-                                        timeout=6
-                                    )
-                                    final_link = head_resp.headers.get("Location") or redirect_link
-                                except Exception:
-                                    final_link = redirect_link
-
-                                event_data["direct_url"] = final_link
-                                return event_data
-                            elif event_data.get("status") == "failed":
-                                raise ValueError(f"Conversion task failed: {event_data}")
-                        except json.JSONDecodeError:
-                            pass
-        except Exception as e:
-            logger.warning(f"Download endpoint {ep['api_base']} error: {e}")
-            continue
 
     raise TimeoutError("SSE connection ended without download_link")
 

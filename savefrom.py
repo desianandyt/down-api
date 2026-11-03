@@ -107,13 +107,16 @@ def extract_raw(url: str) -> Dict[str, Any]:
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    # 3. Post to worker (Zero-Proxy Direct mode by default, or with custom proxies)
+    # 3. Post to worker (Zero-Proxy Direct mode by default, or with free fallback proxy)
     worker_url = "https://worker.savefrom.net/savefrom.php"
     last_err = None
 
-    max_attempts = 1 if proxy_pool.is_direct else min(3, len(proxy_pool.get_all()))
-    for attempt in range(max_attempts):
-        cur_proxies = proxy_pool.get_dict()
+    proxy_attempts = [proxy_pool.get_dict()]
+    fallback_p = proxy_pool.get_fallback_dict()
+    if fallback_p and fallback_p != proxy_attempts[0]:
+        proxy_attempts.append(fallback_p)
+
+    for attempt, cur_proxies in enumerate(proxy_attempts):
         try:
             resp = requests.post(worker_url, data=payload, headers=headers, proxies=cur_proxies, timeout=12)
             text = resp.text
@@ -121,7 +124,7 @@ def extract_raw(url: str) -> Dict[str, Any]:
                 # Successfully received encrypted JS response
                 return _decrypt_with_node(text)
             elif "<!DOCTYPE" in text or "<html" in text:
-                logger.warning(f"SaveFrom attempt {attempt+1} got HTML challenge. Falling back...")
+                logger.warning(f"SaveFrom attempt {attempt+1} got HTML challenge. Retrying with fallback proxy...")
                 continue
             else:
                 last_err = f"Unexpected response (status {resp.status_code}): {text[:200]}"
