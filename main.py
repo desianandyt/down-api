@@ -622,8 +622,23 @@ def stream_media(
     if not direct_url:
         raise HTTPException(status_code=404, detail="Could not obtain direct streaming URL")
 
-    headers = {"User-Agent": vidssave.DEFAULT_HEADERS["User-Agent"]}
-    r = requests.get(direct_url, headers=headers, stream=True)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Referer": "https://vidssave.com/",
+        "Origin": "https://vidssave.com"
+    }
+    try:
+        r = requests.get(direct_url, headers=headers, stream=True, timeout=20)
+        if r.status_code != 200 or "text/html" in r.headers.get("Content-Type", ""):
+            fallback_proxies = proxy_pool.get_fallback_dict()
+            if fallback_proxies:
+                r = requests.get(direct_url, headers=headers, proxies=fallback_proxies, stream=True, timeout=20)
+    except Exception:
+        fallback_proxies = proxy_pool.get_fallback_dict()
+        if fallback_proxies:
+            r = requests.get(direct_url, headers=headers, proxies=fallback_proxies, stream=True, timeout=20)
+        else:
+            raise
 
     clean_title = "".join(c for c in dl_info.get("title", "media") if c.isalnum() or c in (" ", "-", "_")).strip()
     quality_tag = dl_info.get("quality") or ("MP3" if type == "audio" else "HD")
