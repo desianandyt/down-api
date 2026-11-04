@@ -12,12 +12,7 @@ def get_downloader_html() -> str:
 
   <style>
     /* ============================================================
-       DESIGN TOKENS — dark neutral + single white accent
-       Improvements over v1:
-       - Subtle CSS grain texture for depth (no WebGL overhead)
-       - Warmer dark base (#0d0d0d) instead of cold pure black
-       - Tighter, more refined type scale
-       - Better spacing rhythm (8px grid strictly)
+       DESIGN TOKENS
     ============================================================ */
     :root {
       --bg:          #0d0d0d;
@@ -41,7 +36,6 @@ def get_downloader_html() -> str:
       --r-pill:      999px;
       --font:        'Geist', system-ui, -apple-system, sans-serif;
       --ease:        cubic-bezier(0.16, 1, 0.3, 1);
-      --ease-fast:   cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     *, *::before, *::after {
@@ -62,7 +56,7 @@ def get_downloader_html() -> str:
     body {
       min-height: 100dvh;
       overflow-x: hidden;
-      /* Subtle grain texture for premium depth — pure CSS, zero JS */
+      /* Subtle CSS grain texture — zero JS, zero WebGL */
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
     }
 
@@ -78,7 +72,7 @@ def get_downloader_html() -> str:
       justify-content: space-between;
       padding: 0 24px;
       height: 56px;
-      background: rgba(13,13,13,0.85);
+      background: rgba(13,13,13,0.88);
       backdrop-filter: blur(20px) saturate(1.6);
       -webkit-backdrop-filter: blur(20px) saturate(1.6);
       border-bottom: 1px solid var(--line);
@@ -91,7 +85,6 @@ def get_downloader_html() -> str:
       text-decoration: none;
       user-select: none;
     }
-
     .logo-mark {
       width: 28px;
       height: 28px;
@@ -101,7 +94,6 @@ def get_downloader_html() -> str:
       place-items: center;
       flex-shrink: 0;
     }
-
     .logo-name {
       font-size: 15px;
       font-weight: 700;
@@ -114,8 +106,6 @@ def get_downloader_html() -> str:
       align-items: center;
       gap: 16px;
     }
-
-    /* Live indicator — small green dot + text */
     .live-pill {
       display: inline-flex;
       align-items: center;
@@ -131,10 +121,7 @@ def get_downloader_html() -> str:
       background: var(--success);
       animation: blink 2.5s ease-in-out infinite;
     }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
-    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
     .nav-link {
       font-size: 13px;
@@ -157,7 +144,7 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       HERO — left-aligned on desktop (Design Variance: 7)
+       HERO — 2-col above 900px (FIX: was 768px, too cramped)
     ============================================================ */
     .hero-wrap {
       max-width: 1000px;
@@ -169,8 +156,6 @@ def get_downloader_html() -> str:
       gap: 64px;
       align-items: start;
     }
-
-    .hero-left {}
 
     .hero-eyebrow {
       display: inline-flex;
@@ -190,7 +175,6 @@ def get_downloader_html() -> str:
       background: var(--success);
       flex-shrink: 0;
     }
-
     .hero-title {
       font-size: clamp(28px, 4vw, 44px);
       font-weight: 800;
@@ -199,7 +183,6 @@ def get_downloader_html() -> str:
       color: var(--text-hi);
       margin-bottom: 14px;
     }
-
     .hero-sub {
       font-size: 15px;
       color: var(--text-lo);
@@ -208,13 +191,11 @@ def get_downloader_html() -> str:
       max-width: 38ch;
     }
 
-    /* Platform grid — improved with platform colors as 1px border on hover */
     .platform-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 7px;
     }
-
     .platform-btn {
       display: inline-flex;
       align-items: center;
@@ -227,6 +208,7 @@ def get_downloader_html() -> str:
       padding: 6px 12px;
       border-radius: var(--r-pill);
       cursor: pointer;
+      font-family: var(--font);
       transition: color 0.2s, border-color 0.2s, background 0.2s;
       user-select: none;
     }
@@ -243,22 +225,22 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       DOWNLOAD BOX — right column on desktop
+       DOWNLOAD BOX
+       FIX: Removed overflow:hidden — was clipping history dropdown.
+       Border-radius now applied to inner children individually.
     ============================================================ */
-    .hero-right {}
-
     .download-box {
       background: var(--bg-raised);
       border: 1px solid var(--line);
       border-radius: var(--r-xl);
-      overflow: hidden;
+      /* NO overflow:hidden here — history panel must overflow */
+      position: relative;
       transition: border-color 0.25s var(--ease);
     }
     .download-box:focus-within {
       border-color: var(--line-strong);
     }
 
-    /* Cycling animated placeholder */
     .input-area {
       padding: 16px 16px 10px;
     }
@@ -283,9 +265,7 @@ def get_downloader_html() -> str:
       padding: 10px 10px 10px 14px;
       transition: border-color 0.2s;
     }
-    .input-row:focus-within {
-      border-color: var(--line-focus);
-    }
+    .input-row:focus-within { border-color: var(--line-focus); }
 
     .url-input {
       flex: 1;
@@ -314,8 +294,8 @@ def get_downloader_html() -> str:
     }
     .btn-inline:hover { color: var(--text-md); background: var(--bg-elevated); }
 
-    /* Detected platform badge (shown when URL is pasted) */
-    .detected-platform {
+    /* Platform detection badge (shown when URL typed) */
+    .detected-badge {
       display: none;
       align-items: center;
       gap: 7px;
@@ -325,14 +305,10 @@ def get_downloader_html() -> str:
       margin-top: 10px;
       padding: 0 2px;
     }
-    .detected-platform.show { display: flex; }
-    .detected-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-    }
+    .detected-badge.show { display: flex; }
+    .detected-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
-    /* Submit button */
+    /* FIX: form wraps submit button so mobile keyboard "Go" key works */
     .btn-submit {
       display: flex;
       align-items: center;
@@ -354,11 +330,7 @@ def get_downloader_html() -> str:
     }
     .btn-submit:hover  { background: #e4e4e7; }
     .btn-submit:active { transform: scale(0.985); }
-    .btn-submit:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
     .input-footer {
       padding: 10px 16px 14px;
@@ -367,37 +339,87 @@ def get_downloader_html() -> str:
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 8px;
+      border-top: 1px solid var(--line);
     }
-
-    .hint-text {
-      font-size: 11px;
-      color: var(--text-xlo);
-    }
-
-    .btn-try-example {
+    .hint-text { font-size: 11px; color: var(--text-xlo); }
+    .btn-try {
       font-size: 11px;
       font-weight: 500;
       color: var(--text-lo);
       background: none;
       border: none;
       cursor: pointer;
-      padding: 0;
+      font-family: var(--font);
       text-decoration: underline;
       text-underline-offset: 2px;
       text-decoration-color: var(--text-xlo);
       transition: color 0.15s;
+      padding: 0;
     }
-    .btn-try-example:hover { color: var(--text-md); }
+    .btn-try:hover { color: var(--text-md); }
 
     /* ============================================================
-       LOADING STATE — skeleton-aware, no spinner alone
+       HISTORY PANEL
+       FIX: position:absolute + z-index so it overlays content below
+       without being clipped by parent border-radius.
+    ============================================================ */
+    .history-panel {
+      display: none;
+      position: absolute;
+      left: -1px;
+      right: -1px;
+      top: calc(100% + 4px);
+      z-index: 60;
+      background: var(--bg-raised);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .history-panel.open { display: flex; flex-direction: column; }
+    .history-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-xlo);
+      padding: 10px 14px 4px;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 12px;
+      color: var(--text-lo);
+      border: none;
+      background: none;
+      text-align: left;
+      font-family: var(--font);
+      width: 100%;
+    }
+    .history-item:hover { background: var(--bg-elevated); color: var(--text-md); }
+    .history-item svg { flex-shrink: 0; }
+    .history-url {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ============================================================
+       LOADING STATE — skeleton shimmer
     ============================================================ */
     .loading-wrap {
       display: none;
-      padding: 20px 16px;
+      padding: 16px 16px 20px;
+      border-top: 1px solid var(--line);
     }
-
-    /* Skeleton shimmer */
     @keyframes shimmer {
       0%   { background-position: -400px 0; }
       100% { background-position: 400px 0; }
@@ -408,25 +430,23 @@ def get_downloader_html() -> str:
       background-size: 800px 100%;
       animation: shimmer 1.4s ease-in-out infinite;
     }
-
     .skel-thumb { width: 100%; aspect-ratio: 16/9; border-radius: var(--r-sm); margin-bottom: 12px; }
-    .skel-line  { height: 14px; margin-bottom: 8px; }
+    .skel-line  { height: 13px; margin-bottom: 8px; }
     .skel-line.w80 { width: 80%; }
     .skel-line.w50 { width: 50%; }
     .skel-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-    .skel-card  { height: 100px; border-radius: var(--r-md); }
+    .skel-card  { height: 90px; border-radius: var(--r-md); }
 
     .loading-step {
       font-size: 12px;
       color: var(--text-lo);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .loading-step-spinner {
-      width: 12px;
-      height: 12px;
+    .step-spin {
+      width: 12px; height: 12px;
       border-radius: 50%;
       border: 1.5px solid var(--line-strong);
       border-top-color: var(--text-md);
@@ -436,9 +456,9 @@ def get_downloader_html() -> str:
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ============================================================
-       ERROR
+       ERROR PANEL
     ============================================================ */
-    .error-box {
+    .error-panel {
       display: none;
       align-items: flex-start;
       gap: 10px;
@@ -450,20 +470,40 @@ def get_downloader_html() -> str:
       font-size: 13px;
       color: #fca5a5;
     }
-    .error-box-icon { flex-shrink: 0; color: var(--danger); margin-top: 1px; }
+    .error-icon { flex-shrink: 0; color: var(--danger); margin-top: 1px; }
+    .retry-link {
+      margin-top: 4px;
+      display: block;
+      font-size: 11px;
+      color: var(--text-lo);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: var(--font);
+    }
+    .retry-link:hover { color: var(--text-md); }
 
     /* ============================================================
-       RESULTS — below the hero on mobile, full-width
+       RESULTS
+       FIX: margin-bottom 140px (was 100px) to clear sticky bar + safe area
     ============================================================ */
     .results-wrap {
       display: none;
       max-width: 1000px;
-      margin: 0 auto 100px;
+      margin: 0 auto 140px;
       padding: 0 32px;
       width: 100%;
+      animation: fade-up 0.4s var(--ease) both;
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Media preview: thumbnail left, details right */
+    /* Media preview row */
     .media-row {
       display: flex;
       gap: 20px;
@@ -473,21 +513,17 @@ def get_downloader_html() -> str:
       border: 1px solid var(--line);
       border-radius: var(--r-xl);
       margin-bottom: 24px;
-      animation: fade-up 0.4s var(--ease) both;
-    }
-    @keyframes fade-up {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
     }
 
     .thumb-frame {
       position: relative;
-      width: 200px;
-      min-width: 200px;
+      width: 220px;
+      min-width: 220px;
       aspect-ratio: 16/9;
       border-radius: var(--r-sm);
       overflow: hidden;
       background: var(--bg-elevated);
+      flex-shrink: 0;
     }
     .thumb-frame img {
       width: 100%;
@@ -512,9 +548,8 @@ def get_downloader_html() -> str:
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
-
     .video-title {
       font-size: 16px;
       font-weight: 700;
@@ -522,18 +557,14 @@ def get_downloader_html() -> str:
       line-height: 1.4;
       letter-spacing: -0.3px;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
 
-    .quick-dl-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .quick-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .btn-dl-primary {
+    .btn-primary {
       display: inline-flex;
       align-items: center;
       gap: 7px;
@@ -548,10 +579,10 @@ def get_downloader_html() -> str:
       cursor: pointer;
       transition: background 0.15s, transform 0.15s var(--ease);
     }
-    .btn-dl-primary:hover  { background: #e4e4e7; }
-    .btn-dl-primary:active { transform: scale(0.97); }
+    .btn-primary:hover  { background: #e4e4e7; }
+    .btn-primary:active { transform: scale(0.97); }
 
-    .btn-dl-ghost {
+    .btn-ghost {
       display: inline-flex;
       align-items: center;
       gap: 7px;
@@ -566,11 +597,8 @@ def get_downloader_html() -> str:
       cursor: pointer;
       transition: color 0.15s, border-color 0.15s, transform 0.15s var(--ease);
     }
-    .btn-dl-ghost:hover {
-      color: var(--text-hi);
-      border-color: var(--line-strong);
-    }
-    .btn-dl-ghost:active { transform: scale(0.97); }
+    .btn-ghost:hover { color: var(--text-hi); border-color: var(--line-strong); }
+    .btn-ghost:active { transform: scale(0.97); }
 
     /* ============================================================
        FORMAT TABS
@@ -584,11 +612,7 @@ def get_downloader_html() -> str:
       flex-wrap: wrap;
       gap: 8px;
     }
-
-    .tab-group {
-      display: flex;
-    }
-
+    .tab-grp { display: flex; }
     .tab {
       font-family: var(--font);
       font-size: 13px;
@@ -604,12 +628,10 @@ def get_downloader_html() -> str:
       display: flex;
       align-items: center;
       gap: 7px;
+      white-space: nowrap;
     }
-    .tab:hover  { color: var(--text-md); }
-    .tab.active {
-      color: var(--text-hi);
-      border-bottom-color: var(--text-hi);
-    }
+    .tab:hover { color: var(--text-md); }
+    .tab.active { color: var(--text-hi); border-bottom-color: var(--text-hi); }
 
     .tab-count {
       font-size: 11px;
@@ -619,18 +641,11 @@ def get_downloader_html() -> str:
       background: var(--bg-elevated);
       color: var(--text-lo);
     }
-    .tab.active .tab-count {
-      background: var(--bg-hover);
-      color: var(--text-md);
-    }
-
-    .tab-hint {
-      font-size: 11px;
-      color: var(--text-xlo);
-    }
+    .tab.active .tab-count { background: var(--bg-hover); color: var(--text-md); }
+    .tab-hint { font-size: 11px; color: var(--text-xlo); }
 
     /* ============================================================
-       FORMAT CARDS — improved typography hierarchy
+       FORMAT CARDS — staggered entrance
     ============================================================ */
     .cards-grid {
       display: grid;
@@ -638,7 +653,6 @@ def get_downloader_html() -> str:
       gap: 10px;
     }
 
-    /* Stagger animation via CSS custom property */
     .format-card {
       background: var(--bg-raised);
       border: 1px solid var(--line);
@@ -650,10 +664,10 @@ def get_downloader_html() -> str:
       gap: 12px;
       transition: border-color 0.2s, background 0.2s;
       animation: card-in 0.4s var(--ease) both;
-      animation-delay: calc(var(--i, 0) * 60ms);
+      animation-delay: calc(var(--i, 0) * 55ms);
     }
     @keyframes card-in {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .format-card:hover {
@@ -665,32 +679,17 @@ def get_downloader_html() -> str:
       background: var(--bg-elevated);
     }
 
-    /* Quality number is the hero — large and readable */
-    .fc-quality-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
+    .fc-top { display: flex; justify-content: space-between; align-items: flex-start; }
 
-    .fc-q-number {
+    .fc-num {
       font-size: 32px;
       font-weight: 800;
       letter-spacing: -1px;
       color: var(--text-hi);
       line-height: 1;
     }
-    .fc-q-unit {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-lo);
-      margin-left: 2px;
-    }
-    .fc-q-label {
-      font-size: 11px;
-      color: var(--text-lo);
-      margin-top: 3px;
-      font-weight: 500;
-    }
+    .fc-unit { font-size: 14px; font-weight: 500; color: var(--text-lo); margin-left: 1px; }
+    .fc-sub  { font-size: 11px; color: var(--text-lo); font-weight: 500; margin-top: 3px; }
 
     .fc-badge {
       font-size: 10px;
@@ -708,7 +707,6 @@ def get_downloader_html() -> str:
       background: rgba(74,222,128,0.07);
     }
 
-    /* Specs */
     .fc-specs {
       border-top: 1px solid var(--line);
       padding-top: 10px;
@@ -716,19 +714,10 @@ def get_downloader_html() -> str:
       flex-direction: column;
       gap: 5px;
     }
-    .fc-spec {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-lo);
-    }
-    .fc-spec b {
-      color: var(--text-md);
-      font-weight: 500;
-    }
+    .fc-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-lo); }
+    .fc-row b { color: var(--text-md); font-weight: 500; }
 
-    /* Download btn in card */
-    .btn-fc-dl {
+    .btn-card-dl {
       width: 100%;
       display: flex;
       align-items: center;
@@ -745,28 +734,34 @@ def get_downloader_html() -> str:
       cursor: pointer;
       transition: all 0.2s var(--ease);
     }
-    .format-card:hover .btn-fc-dl,
-    .format-card.selected .btn-fc-dl {
+    .format-card:hover .btn-card-dl,
+    .format-card.selected .btn-card-dl {
       background: var(--text-hi);
       color: #0d0d0d;
       border-color: transparent;
     }
-    .btn-fc-dl:active { transform: scale(0.97); }
+    .btn-card-dl:active { transform: scale(0.97); }
 
     /* ============================================================
-       STICKY BOTTOM BAR — improved with mini thumbnail
+       STICKY BOTTOM BAR
+       FIX: max-width: 1000px so it doesn't span ultra-wide screens
+       FIX: left/right centering with transform trick
     ============================================================ */
     .sticky-bar {
       display: none;
       position: fixed;
       bottom: 0;
-      left: 0;
-      right: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 1000px;
       z-index: 40;
-      background: rgba(13,13,13,0.92);
+      background: rgba(13,13,13,0.94);
       backdrop-filter: blur(20px) saturate(1.6);
       -webkit-backdrop-filter: blur(20px) saturate(1.6);
       border-top: 1px solid var(--line-strong);
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
       padding: 10px 20px;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
       align-items: center;
@@ -774,8 +769,8 @@ def get_downloader_html() -> str:
       animation: bar-up 0.35s var(--ease);
     }
     @keyframes bar-up {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
+      from { transform: translateX(-50%) translateY(100%); }
+      to   { transform: translateX(-50%) translateY(0); }
     }
 
     /* Mini thumbnail in sticky bar */
@@ -788,12 +783,9 @@ def get_downloader_html() -> str:
       flex-shrink: 0;
       display: none;
     }
-    .sticky-thumb.loaded { display: block; }
+    .sticky-thumb.show { display: block; }
 
-    .sticky-info {
-      flex: 1;
-      min-width: 0;
-    }
+    .sticky-info { flex: 1; min-width: 0; }
     .sticky-title {
       font-size: 13px;
       font-weight: 600;
@@ -802,17 +794,9 @@ def get_downloader_html() -> str:
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .sticky-sub {
-      font-size: 11px;
-      color: var(--text-lo);
-      margin-top: 2px;
-    }
+    .sticky-sub { font-size: 11px; color: var(--text-lo); margin-top: 2px; }
 
-    .sticky-btns {
-      display: flex;
-      gap: 8px;
-      flex-shrink: 0;
-    }
+    .sticky-btns { display: flex; gap: 8px; flex-shrink: 0; }
 
     .sticky-btn-p {
       display: inline-flex;
@@ -849,21 +833,17 @@ def get_downloader_html() -> str:
       white-space: nowrap;
       transition: color 0.15s, border-color 0.15s, transform 0.15s;
     }
-    .sticky-btn-s:hover {
-      color: var(--text-hi);
-      border-color: var(--line-focus);
-    }
+    .sticky-btn-s:hover { color: var(--text-hi); border-color: var(--line-focus); }
     .sticky-btn-s:active { transform: scale(0.97); }
 
     /* ============================================================
-       FEATURES STRIP — improved layout
+       FEATURES & FOOTER
     ============================================================ */
     .features-wrap {
       border-top: 1px solid var(--line);
       padding: 48px 32px;
       margin-top: auto;
     }
-
     .features-inner {
       max-width: 1000px;
       margin: 0 auto;
@@ -871,24 +851,9 @@ def get_downloader_html() -> str:
       grid-template-columns: repeat(3, 1fr);
       gap: 40px;
     }
+    .feat-title { font-size: 14px; font-weight: 700; color: var(--text-hi); letter-spacing: -0.2px; margin-bottom: 6px; }
+    .feat-desc  { font-size: 13px; color: var(--text-lo); line-height: 1.6; }
 
-    .feat {}
-    .feat-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-hi);
-      letter-spacing: -0.2px;
-      margin-bottom: 6px;
-    }
-    .feat-desc {
-      font-size: 13px;
-      color: var(--text-lo);
-      line-height: 1.6;
-    }
-
-    /* ============================================================
-       FOOTER
-    ============================================================ */
     footer {
       border-top: 1px solid var(--line);
       padding: 18px 32px;
@@ -900,16 +865,11 @@ def get_downloader_html() -> str:
     }
     .footer-left { font-size: 12px; color: var(--text-xlo); }
     .footer-links { display: flex; gap: 16px; }
-    .footer-links a {
-      font-size: 12px;
-      color: var(--text-xlo);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
+    .footer-links a { font-size: 12px; color: var(--text-xlo); text-decoration: none; transition: color 0.15s; }
     .footer-links a:hover { color: var(--text-lo); }
 
     /* ============================================================
-       TOAST — improved with type variants
+       TOAST
     ============================================================ */
     .toast-stack {
       position: fixed;
@@ -922,7 +882,6 @@ def get_downloader_html() -> str:
       pointer-events: none;
       max-width: 320px;
     }
-
     .toast {
       background: var(--bg-elevated);
       border: 1px solid var(--line-strong);
@@ -946,58 +905,18 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       HISTORY DROPDOWN — recent links
+       RESPONSIVE — breakpoint at 900px (FIX: was 768px)
     ============================================================ */
-    .history-panel {
-      display: none;
-      flex-direction: column;
-      border-top: 1px solid var(--line);
-      max-height: 160px;
-      overflow-y: auto;
-    }
-    .history-panel.open { display: flex; }
-    .history-title {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-xlo);
-      padding: 8px 14px 4px;
-    }
-    .history-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 14px;
-      cursor: pointer;
-      transition: background 0.15s;
-      font-size: 12px;
-      color: var(--text-lo);
-      border: none;
-      background: none;
-      text-align: left;
-      font-family: var(--font);
-    }
-    .history-item:hover {
-      background: var(--bg-elevated);
-      color: var(--text-md);
-    }
-    .history-item svg { flex-shrink: 0; }
-
-    /* ============================================================
-       RESPONSIVE MOBILE (<= 640px)
-    ============================================================ */
-    @media (max-width: 768px) {
-      /* Hero becomes single column */
+    @media (max-width: 900px) {
       .hero-wrap {
         grid-template-columns: 1fr;
         gap: 32px;
         padding: 36px 16px 32px;
       }
+      .hero-sub { max-width: 100%; }
       .hero-title { font-size: clamp(26px, 8vw, 36px); }
-      .hero-sub   { font-size: 14px; max-width: 100%; }
 
-      /* Platform grid scrolls horizontally */
+      /* Platform pills: horizontal scroll on narrow screens */
       .platform-grid {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -1008,50 +927,43 @@ def get_downloader_html() -> str:
       .platform-grid::-webkit-scrollbar { display: none; }
       .platform-btn { flex-shrink: 0; }
 
+      .nav-link { display: none; }
+      .live-pill { display: none; }
+    }
+
+    @media (max-width: 640px) {
       /* Results */
       .results-wrap { padding: 0 16px; }
-      .media-row {
-        flex-direction: column;
-        gap: 14px;
-        padding: 16px;
-      }
+
+      .media-row { flex-direction: column; gap: 14px; padding: 16px; }
       .thumb-frame { width: 100%; min-width: 0; }
       .video-title { font-size: 15px; }
-      .quick-dl-row { flex-direction: column; }
-      .btn-dl-primary, .btn-dl-ghost {
-        width: 100%;
-        justify-content: center;
-      }
 
-      /* Format cards */
+      .quick-row { flex-direction: column; }
+      .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
+
+      /* Format cards: 1 column */
       .cards-grid { grid-template-columns: 1fr; }
-      .fc-q-number { font-size: 26px; }
+      .fc-num { font-size: 26px; }
 
       /* Sticky bar */
       .sticky-bar {
+        border-left: none;
+        border-right: none;
         flex-wrap: wrap;
         gap: 10px;
         padding: 10px 14px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
       }
       .sticky-thumb { display: none !important; }
-      .sticky-btns {
-        width: 100%;
-      }
-      .sticky-btn-p, .sticky-btn-s {
-        flex: 1;
-        justify-content: center;
-      }
+      .sticky-btns { width: 100%; }
+      .sticky-btn-p, .sticky-btn-s { flex: 1; justify-content: center; }
 
-      /* Features */
       .features-inner { grid-template-columns: 1fr; gap: 24px; }
       .features-wrap  { padding: 32px 16px; }
-
       footer { padding: 16px; }
-      .toast-stack { right: 12px; left: 12px; max-width: 100%; }
 
-      .nav-link { display: none; }
-      .live-pill { display: none; }
+      .toast-stack { right: 12px; left: 12px; max-width: 100%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1064,7 +976,9 @@ def get_downloader_html() -> str:
 </head>
 <body>
 
-  <!-- Header -->
+  <!-- Hidden <a> tag for downloads — FIX: avoids window.location.href page-reload UX -->
+  <a id="dlAnchor" style="display:none;" aria-hidden="true"></a>
+
   <header class="site-header">
     <a href="/" class="logo">
       <div class="logo-mark">
@@ -1085,48 +999,46 @@ def get_downloader_html() -> str:
 
   <div class="page">
 
-    <!-- Hero -->
     <div class="hero-wrap">
 
-      <!-- Left: Headline + platforms -->
-      <div class="hero-left">
+      <!-- Left column: Headline + platform pills -->
+      <div>
         <div class="hero-eyebrow">
           <span class="eyebrow-dot"></span>
           Free &amp; always online
         </div>
-
         <h1 class="hero-title">
           Save any video<br>in seconds.
         </h1>
-
         <p class="hero-sub">
           Paste a link from YouTube, TikTok, Instagram, or Twitter. Pick your quality. It downloads straight to your device — no apps, no sign-up.
         </p>
-
         <div class="platform-grid">
           <button class="platform-btn" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">
-            <span class="p-dot" style="background:#ff0000;"></span> YouTube
+            <span class="p-dot" style="background:#ff2020;"></span> YouTube
           </button>
           <button class="platform-btn" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">
             <span class="p-dot" style="background:#ff4444;"></span> Shorts
           </button>
-          <button class="platform-btn">
+          <button class="platform-btn" onclick="tryUrl('https://www.tiktok.com/@tiktok/video/7106594312292453675')">
             <span class="p-dot" style="background:#69c9d0;"></span> TikTok
           </button>
-          <button class="platform-btn">
+          <button class="platform-btn" onclick="toast('Paste your Instagram Reels link in the box')">
             <span class="p-dot" style="background:#e1306c;"></span> Instagram
           </button>
-          <button class="platform-btn">
+          <button class="platform-btn" onclick="toast('Paste your Twitter/X link in the box')">
             <span class="p-dot" style="background:#888;"></span> Twitter / X
           </button>
         </div>
       </div>
 
-      <!-- Right: Input box -->
-      <div class="hero-right">
+      <!-- Right column: Download box -->
+      <div style="position:relative;">
+
         <div class="download-box" id="downloadBox">
-          <div class="input-area">
-            <span class="input-label">Video link</span>
+          <!-- FIX: form tag wraps input + submit so mobile keyboard Go button works -->
+          <form class="input-area" onsubmit="onFormSubmit(event)">
+            <label class="input-label" for="urlInput">Video link</label>
             <div class="input-row">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-xlo);flex-shrink:0;">
                 <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
@@ -1149,7 +1061,7 @@ def get_downloader_html() -> str:
                   <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
               </button>
-              <button type="button" class="btn-inline" onclick="pasteLink()" aria-label="Paste from clipboard" title="Paste">
+              <button type="button" class="btn-inline" onclick="pasteLink()" aria-label="Paste" title="Paste from clipboard">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
@@ -1157,35 +1069,43 @@ def get_downloader_html() -> str:
             </div>
 
             <!-- Auto-detected platform badge -->
-            <div class="detected-platform" id="detectedPlatform">
+            <div class="detected-badge" id="detectedBadge">
               <span class="detected-dot" id="detectedDot"></span>
-              <span id="detectedName"></span>
+              <span id="detectedName" style="font-size:11px;font-weight:600;color:var(--text-lo);"></span>
             </div>
 
-            <!-- Main CTA -->
-            <button class="btn-submit" id="btnSubmit" onclick="run()">
+            <!-- CTA button — type="submit" triggers form onsubmit -->
+            <button type="submit" id="btnSubmit" class="btn-submit">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
               Get Download Links
             </button>
-          </div>
-
-          <!-- History dropdown -->
-          <div class="history-panel" id="historyPanel">
-            <div class="history-title">Recent</div>
-          </div>
+          </form>
 
           <div class="input-footer">
             <span class="hint-text">YouTube, Shorts, TikTok, Instagram, Twitter</span>
-            <button class="btn-try-example" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">Try an example</button>
+            <button class="btn-try" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">Try an example</button>
           </div>
 
-          <!-- Loading skeleton (inside box) -->
+          <!-- Error panel (inside box) -->
+          <div class="error-panel" id="errorPanel">
+            <div class="error-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+              </svg>
+            </div>
+            <div>
+              <div id="errorText">Something went wrong. Please check the link and try again.</div>
+              <button class="retry-link" onclick="run()">Try again</button>
+            </div>
+          </div>
+
+          <!-- Skeleton loading panel (inside box) -->
           <div class="loading-wrap" id="loadingWrap">
             <div class="loading-step">
-              <div class="loading-step-spinner"></div>
-              <span id="loadingStepText">Fetching video info…</span>
+              <div class="step-spin"></div>
+              <span id="stepText">Fetching video info…</span>
             </div>
             <div class="skel skel-thumb"></div>
             <div class="skel skel-line w80"></div>
@@ -1195,25 +1115,20 @@ def get_downloader_html() -> str:
               <div class="skel skel-card"></div>
             </div>
           </div>
+        </div>
 
-          <!-- Error (inside box) -->
-          <div class="error-box" id="errorBox">
-            <div class="error-box-icon">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
-              </svg>
-            </div>
-            <div id="errorText">Something went wrong. Please check the link and try again.</div>
-          </div>
+        <!-- FIX: History dropdown is OUTSIDE download-box so it's not clipped.
+             Absolutely positioned relative to parent div (position:relative) -->
+        <div class="history-panel" id="historyPanel">
+          <div class="history-title">Recent</div>
+        </div>
 
-        </div><!-- /download-box -->
-      </div><!-- /hero-right -->
+      </div><!-- /position:relative wrapper -->
     </div><!-- /hero-wrap -->
 
-    <!-- Results section -->
+    <!-- Results -->
     <div class="results-wrap" id="resultsWrap">
 
-      <!-- Media info row -->
       <div class="media-row">
         <div class="thumb-frame">
           <img id="thumbImg" src="" alt="thumbnail">
@@ -1221,14 +1136,14 @@ def get_downloader_html() -> str:
         </div>
         <div class="media-details">
           <h2 class="video-title" id="videoTitle">Video</h2>
-          <div class="quick-dl-row">
-            <button class="btn-dl-primary" onclick="dlBest()">
+          <div class="quick-row">
+            <button class="btn-primary" id="btnBestVideo" onclick="dlBest()">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
               Save best quality
             </button>
-            <button class="btn-dl-ghost" onclick="dlMp3()">
+            <button class="btn-ghost" onclick="dlMp3()">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
               </svg>
@@ -1238,9 +1153,8 @@ def get_downloader_html() -> str:
         </div>
       </div>
 
-      <!-- Format tabs -->
       <div class="tabs-bar">
-        <div class="tab-group">
+        <div class="tab-grp">
           <button class="tab active" id="tabV" onclick="setTab('video')">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
@@ -1262,20 +1176,20 @@ def get_downloader_html() -> str:
       <div class="cards-grid" id="videoGrid"></div>
       <div class="cards-grid" id="audioGrid" style="display:none;"></div>
 
-    </div><!-- /results-wrap -->
+    </div>
 
-    <!-- Features strip -->
+    <!-- Features -->
     <div class="features-wrap" id="featuresWrap">
       <div class="features-inner">
-        <div class="feat">
+        <div>
           <div class="feat-title">No account needed</div>
           <div class="feat-desc">Paste a link, choose a quality, and your file starts downloading. Nothing else required.</div>
         </div>
-        <div class="feat">
+        <div>
           <div class="feat-title">Every quality, every format</div>
           <div class="feat-desc">Pick from HD 1080p, 720p, and lower resolutions — or save just the audio as an MP3.</div>
         </div>
-        <div class="feat">
+        <div>
           <div class="feat-title">Works on any device</div>
           <div class="feat-desc">iPhone, Android, laptop, or desktop — same clean experience across every screen.</div>
         </div>
@@ -1290,7 +1204,7 @@ def get_downloader_html() -> str:
       </div>
     </footer>
 
-  </div><!-- /page -->
+  </div>
 
   <!-- Sticky bar -->
   <div class="sticky-bar" id="stickyBar">
@@ -1315,23 +1229,23 @@ def get_downloader_html() -> str:
     </div>
   </div>
 
-  <!-- Toast stack -->
   <div class="toast-stack" id="toastStack"></div>
 
   <script>
     /* ============================================================
        STATE
     ============================================================ */
-    let currentUrl  = "";
+    let currentUrl      = "";
     let selectedQuality = null;
     let selectedType    = "video";
-    let thumbSrc    = "";
+    let bestVideoUrl    = "";   // FIX: store actual best quality URL
+    let bestAudioUrl    = "";
 
     const HISTORY_KEY = "downify_history";
-    const MAX_HISTORY = 5;
+    const MAX_HIST    = 5;
 
     /* ============================================================
-       HISTORY (localStorage)
+       HISTORY
     ============================================================ */
     function getHistory() {
       try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { return []; }
@@ -1339,99 +1253,98 @@ def get_downloader_html() -> str:
     function pushHistory(url) {
       let h = getHistory().filter(u => u !== url);
       h.unshift(url);
-      if (h.length > MAX_HISTORY) h = h.slice(0, MAX_HISTORY);
+      if (h.length > MAX_HIST) h = h.slice(0, MAX_HIST);
       try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch {}
     }
     function renderHistory() {
       const h = getHistory();
       const panel = document.getElementById('historyPanel');
+      panel.querySelectorAll('.history-item').forEach(el => el.remove());
       if (!h.length) { panel.classList.remove('open'); return; }
-
-      // Clear old items (keep title)
-      const items = panel.querySelectorAll('.history-item');
-      items.forEach(el => el.remove());
 
       h.forEach(url => {
         const btn = document.createElement('button');
         btn.className = 'history-item';
+        btn.type = 'button';
         btn.innerHTML = `
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/>
           </svg>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(url)}</span>
+          <span class="history-url">${esc(url)}</span>
         `;
-        btn.onclick = () => { fillInput(url); onType(url); panel.classList.remove('open'); run(); };
+        btn.onmousedown = (e) => {
+          // FIX: use mousedown (fires before blur) so item click registers
+          e.preventDefault();
+          document.getElementById('urlInput').value = url;
+          onType(url);
+          panel.classList.remove('open');
+          run();
+        };
         panel.appendChild(btn);
       });
+      panel.classList.add('open');
     }
 
     /* ============================================================
        PLATFORM DETECTION
     ============================================================ */
     const PLATFORMS = [
+      { match: v => v.includes('youtube.com/shorts'), name: 'YouTube Shorts', color: '#ff4444' },
       { match: v => v.includes('youtube.com') || v.includes('youtu.be'), name: 'YouTube', color: '#ff2020' },
-      { match: v => v.includes('youtube.com/shorts'), name: 'YouTube Shorts', color: '#ff2020' },
       { match: v => v.includes('tiktok.com'), name: 'TikTok', color: '#69c9d0' },
       { match: v => v.includes('instagram.com'), name: 'Instagram', color: '#e1306c' },
-      { match: v => v.includes('twitter.com') || v.includes('x.com'), name: 'Twitter / X', color: '#888' },
-      { match: v => v.includes('facebook.com') || v.includes('fb.com'), name: 'Facebook', color: '#1877f2' },
+      { match: v => v.includes('twitter.com') || v.includes('x.com'), name: 'Twitter / X', color: '#a0a0a0' },
+      { match: v => v.includes('facebook.com') || v.includes('fb.watch'), name: 'Facebook', color: '#1877f2' },
     ];
 
     function detectPlatform(url) {
       const lc = url.toLowerCase();
-      // Shorts before YouTube so it matches first
-      if (lc.includes('youtube.com/shorts')) return PLATFORMS[1];
-      for (const p of PLATFORMS) {
-        if (p.match(lc)) return p;
-      }
+      for (const p of PLATFORMS) { if (p.match(lc)) return p; }
       return null;
     }
 
     /* ============================================================
        INPUT HANDLERS
     ============================================================ */
-    function fillInput(url) {
-      document.getElementById('urlInput').value = url;
-    }
-
     function onType(val) {
       document.getElementById('btnClear').style.display = val ? 'flex' : 'none';
 
+      const badge = document.getElementById('detectedBadge');
       const p = detectPlatform(val);
-      const dp = document.getElementById('detectedPlatform');
       if (p && val.startsWith('http')) {
         document.getElementById('detectedDot').style.background = p.color;
         document.getElementById('detectedName').textContent = p.name + ' detected';
-        dp.classList.add('show');
+        badge.classList.add('show');
       } else {
-        dp.classList.remove('show');
+        badge.classList.remove('show');
       }
     }
 
     function clearInput() {
-      fillInput('');
+      const inp = document.getElementById('urlInput');
+      inp.value = '';
       onType('');
-      document.getElementById('detectedPlatform').classList.remove('show');
-      document.getElementById('btnClear').style.display = 'none';
-      document.getElementById('urlInput').focus();
+      document.getElementById('historyPanel').classList.remove('open');
+      inp.focus();
     }
 
     function onFocusInput() {
-      const h = getHistory();
-      if (h.length && !document.getElementById('urlInput').value) {
-        renderHistory();
-        document.getElementById('historyPanel').classList.add('open');
-      }
+      const val = document.getElementById('urlInput').value;
+      if (!val) renderHistory();
     }
+
+    // FIX: increased blur delay to 240ms so mousedown on history item fires first
     function onBlurInput() {
-      setTimeout(() => document.getElementById('historyPanel').classList.remove('open'), 160);
+      setTimeout(() => {
+        document.getElementById('historyPanel').classList.remove('open');
+      }, 240);
     }
 
     async function pasteLink() {
       try {
         const text = await navigator.clipboard.readText();
         if (text && text.trim()) {
-          fillInput(text.trim());
+          document.getElementById('urlInput').value = text.trim();
           onType(text.trim());
           toast("Link pasted");
           run();
@@ -1442,8 +1355,14 @@ def get_downloader_html() -> str:
     }
 
     function tryUrl(url) {
-      fillInput(url);
+      document.getElementById('urlInput').value = url;
       onType(url);
+      run();
+    }
+
+    // FIX: form onsubmit handler prevents page reload
+    function onFormSubmit(e) {
+      e.preventDefault();
       run();
     }
 
@@ -1466,31 +1385,31 @@ def get_downloader_html() -> str:
 
       currentUrl = url;
       pushHistory(url);
+      document.getElementById('historyPanel').classList.remove('open');
 
-      const loadW  = document.getElementById('loadingWrap');
-      const errBox = document.getElementById('errorBox');
-      const resW   = document.getElementById('resultsWrap');
-      const bar    = document.getElementById('stickyBar');
-      const btn    = document.getElementById('btnSubmit');
-      const featW  = document.getElementById('featuresWrap');
-      const stepTx = document.getElementById('loadingStepText');
+      const loadW   = document.getElementById('loadingWrap');
+      const errP    = document.getElementById('errorPanel');
+      const resW    = document.getElementById('resultsWrap');
+      const bar     = document.getElementById('stickyBar');
+      const btn     = document.getElementById('btnSubmit');
+      const featW   = document.getElementById('featuresWrap');
+      const stepTx  = document.getElementById('stepText');
 
-      // Reset
-      errBox.style.display  = 'none';
-      resW.style.display    = 'none';
-      bar.style.display     = 'none';
-      loadW.style.display   = 'block';
-      btn.disabled          = true;
+      errP.style.display  = 'none';
+      resW.style.display  = 'none';
+      bar.style.display   = 'none';
+      loadW.style.display = 'block';
+      btn.disabled        = true;
 
       const steps = ["Fetching video info…", "Reading available qualities…", "Almost ready…"];
       let si = 0;
       stepTx.textContent = steps[0];
-      const stepTimer = setInterval(() => { si = (si + 1) % steps.length; stepTx.textContent = steps[si]; }, 1800);
+      const stTimer = setInterval(() => { si = (si+1) % steps.length; stepTx.textContent = steps[si]; }, 1800);
 
       try {
         const res  = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
         const data = await res.json();
-        clearInterval(stepTimer);
+        clearInterval(stTimer);
 
         if (!res.ok || data.status !== 'success') {
           throw new Error(data.detail || data.message || 'Could not read this video link.');
@@ -1501,11 +1420,11 @@ def get_downloader_html() -> str:
         render(data, url);
 
       } catch (err) {
-        clearInterval(stepTimer);
+        clearInterval(stTimer);
         loadW.style.display = 'none';
         document.getElementById('errorText').textContent =
           err.message || 'Something went wrong. Please check the link and try again.';
-        errBox.style.display = 'flex';
+        errP.style.display = 'flex';
       } finally {
         btn.disabled = false;
       }
@@ -1515,8 +1434,8 @@ def get_downloader_html() -> str:
        RENDER RESULTS
     ============================================================ */
     function render(data, url) {
-      thumbSrc = data.thumbnail || '';
-      document.getElementById('thumbImg').src    = thumbSrc;
+      const thumbSrc = data.thumbnail || '';
+      document.getElementById('thumbImg').src = thumbSrc;
       document.getElementById('thumbDur').textContent = data.duration || '';
       document.getElementById('videoTitle').textContent = data.title || 'Video';
 
@@ -1526,9 +1445,16 @@ def get_downloader_html() -> str:
       document.getElementById('cntV').textContent = videos.length;
       document.getElementById('cntA').textContent = audios.length;
 
+      // FIX: store actual best-quality URLs instead of sending "best"
+      bestVideoUrl = videos.length
+        ? `/api/stream?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(videos[0].quality || 'best')}`
+        : '';
+      bestAudioUrl = audios.length
+        ? `/api/stream?url=${encodeURIComponent(url)}&type=audio&quality=${encodeURIComponent(audios[0].quality || 'best')}`
+        : '';
+
       buildGrid(document.getElementById('videoGrid'), videos, 'video', url);
       buildGrid(document.getElementById('audioGrid'), audios, 'audio', url);
-
       setTab('video');
 
       document.getElementById('resultsWrap').style.display = 'block';
@@ -1536,7 +1462,7 @@ def get_downloader_html() -> str:
 
       // Sticky thumbnail
       const st = document.getElementById('stickyThumb');
-      if (thumbSrc) { st.src = thumbSrc; st.classList.add('loaded'); }
+      if (thumbSrc) { st.src = thumbSrc; st.classList.add('show'); }
 
       document.getElementById('resultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
       toast("Download links ready");
@@ -1548,9 +1474,27 @@ def get_downloader_html() -> str:
         const streamUrl = `/api/stream?url=${encodeURIComponent(url)}&type=${type}&quality=${encodeURIComponent(item.quality || 'best')}`;
         const isBest    = i === 0;
 
-        const q    = String(item.quality || (type === 'audio' ? 'MP3' : 'HD'));
-        const qNum = q.replace(/[^0-9kK]/g, '') || q;
-        const qUnit = /[0-9]/.test(qNum) && type === 'video' ? 'p' : '';
+        // FIX: Smarter quality display for audio vs video
+        const rawQ  = String(item.quality || (type === 'audio' ? '320kbps' : 'HD'));
+        let   qNum, qUnit, qSub;
+
+        if (type === 'video') {
+          qNum  = rawQ.replace(/[^0-9]/g, '') || rawQ;
+          qUnit = /^[0-9]+$/.test(qNum) ? 'p' : '';
+          qSub  = 'Video quality';
+        } else {
+          // For audio: "320kbps" -> show "320" large + "kbps" small
+          const kbpsMatch = rawQ.match(/([0-9]+)[ ]*kbps/i);
+          if (kbpsMatch) {
+            qNum  = kbpsMatch[1];
+            qUnit = 'kbps';
+          } else {
+            qNum  = rawQ.replace(/[^0-9]/g, '') || rawQ;
+            qUnit = '';
+          }
+          qSub = 'Audio track';
+        }
+
         const fmt  = (item.format || (type === 'audio' ? 'mp3' : 'mp4')).toUpperCase();
         const size = fmtSize(item.size);
 
@@ -1559,24 +1503,32 @@ def get_downloader_html() -> str:
         card.style.setProperty('--i', i);
         card.onclick = () => pick(item, type, card);
 
+        // Label for download button
+        const dlLabel = type === 'audio'
+          ? `Save ${qNum}${qUnit} MP3`
+          : `Save ${qNum}${qUnit}`;
+
         card.innerHTML = `
-          <div class="fc-quality-row">
+          <div class="fc-top">
             <div>
-              <div class="fc-q-number">${esc(qNum)}<span class="fc-q-unit">${qUnit}</span></div>
-              <div class="fc-q-label">${type === 'audio' ? 'Audio track' : 'Video quality'}</div>
+              <div class="fc-num">${esc(qNum)}<span class="fc-unit">${qUnit}</span></div>
+              <div class="fc-sub">${qSub}</div>
             </div>
             <span class="fc-badge${isBest ? ' best' : ''}">${isBest ? 'Best' : fmt}</span>
           </div>
           <div class="fc-specs">
-            <div class="fc-spec"><span>Format</span><b>${esc(fmt)}</b></div>
-            ${size ? `<div class="fc-spec"><span>Approx. size</span><b>${size}</b></div>` : ''}
-            <div class="fc-spec"><span>${type === 'audio' ? 'Codec' : 'Audio'}</span><b>${type === 'audio' ? 'MP3' : 'Included'}</b></div>
+            <div class="fc-row"><span>Format</span><b>${esc(fmt)}</b></div>
+            ${size ? `<div class="fc-row"><span>Approx. size</span><b>${size}</b></div>` : ''}
+            <div class="fc-row">
+              <span>${type === 'audio' ? 'Codec' : 'Audio'}</span>
+              <b>${type === 'audio' ? 'MP3' : 'Included'}</b>
+            </div>
           </div>
-          <button class="btn-fc-dl" onclick="event.stopPropagation(); go('${streamUrl}')">
+          <button type="button" class="btn-card-dl" onclick="event.stopPropagation(); go('${streamUrl}')">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
-            Save ${esc(q)}${qUnit}${type === 'audio' ? ' MP3' : ''}
+            ${esc(dlLabel)}
           </button>
         `;
         grid.appendChild(card);
@@ -1593,33 +1545,38 @@ def get_downloader_html() -> str:
       selectedQuality = item;
       selectedType    = type;
 
-      const q    = item.quality || (type === 'video' ? 'Best quality' : 'Best audio');
+      const rawQ = String(item.quality || (type === 'video' ? 'Best quality' : 'Best audio'));
       const fmt  = (item.format || (type === 'video' ? 'MP4' : 'MP3')).toUpperCase();
       const size = fmtSize(item.size);
-      document.getElementById('stickyTitle').textContent = `${q} ${fmt} selected`;
+      document.getElementById('stickyTitle').textContent = `${rawQ} ${fmt} selected`;
       document.getElementById('stickySub').textContent   = size ? `~${size}` : 'Ready to save';
     }
 
     function dlSelected() {
-      if (!currentUrl) return;
-      const q    = selectedQuality?.quality || 'best';
+      if (!currentUrl || !selectedQuality) return;
+      const q    = selectedQuality.quality || 'best';
       const type = selectedType || 'video';
       go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=${type}&quality=${encodeURIComponent(q)}`);
     }
 
+    // FIX: use stored bestVideoUrl (actual first quality) instead of "best"
     function dlBest() {
-      if (!currentUrl) return;
-      go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=video&quality=best`);
+      if (!bestVideoUrl) return;
+      go(bestVideoUrl);
     }
 
     function dlMp3() {
-      if (!currentUrl) return;
-      go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=audio&quality=best`);
+      if (!bestAudioUrl) return;
+      go(bestAudioUrl);
     }
 
+    // FIX: use hidden <a> tag instead of window.location.href
+    // This avoids browser history pollution and doesn't "navigate away"
     function go(url) {
       toast("Download starting…");
-      window.location.href = url;
+      const a = document.getElementById('dlAnchor');
+      a.href = url;
+      a.click();
     }
 
     /* ============================================================
@@ -1655,13 +1612,6 @@ def get_downloader_html() -> str:
         setTimeout(() => el.remove(), 260);
       }, 3000);
     }
-
-    /* Enter key on input */
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('urlInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); run(); }
-      });
-    });
   </script>
 </body>
 </html>"""
