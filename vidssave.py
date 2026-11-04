@@ -275,5 +275,10 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
     raise TimeoutError("SSE connection ended without download_link")
 
 
-def resolve_download_link(resource_content: str, output_format: Optional[str] = None, timeout: int = 25) -> Dict[str, Any]:
-    return _execute_download(resource_content, output_format=output_format, timeout=timeout)
+def resolve_download_link(resource_content: str, output_format: Optional[str] = None, timeout: int = 35) -> Dict[str, Any]:
+    try:
+        return _execute_download(resource_content, output_format=output_format, timeout=timeout)
+    except Exception as e:
+        logger.warning(f"VidsSave download link error ({e}), refreshing credentials...")
+        creds_manager.refresh_creds()
+        return _execute_download(resource_content, output_format=output_format, timeout=timeout)

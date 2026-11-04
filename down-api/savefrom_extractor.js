@@ -26,14 +26,7 @@ function getJSDOM() {
         if (JSDOM) return JSDOM;
     } catch (e) {}
 
-    try {
-        const { execSync } = require('child_process');
-        execSync('npm install --prefix /tmp jsdom --no-save', { stdio: 'ignore', timeout: 90000 });
-        JSDOM = require('/tmp/node_modules/jsdom').JSDOM;
-        if (JSDOM) return JSDOM;
-    } catch (e) {}
-
-    throw new Error('JSDOM module could not be loaded. Please install jsdom: npm install jsdom');
+    throw new Error('JSDOM module could not be loaded. Background installation in progress, please retry in a few seconds.');
 }
 
 let reqBuilderCode = null;
