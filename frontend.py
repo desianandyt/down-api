@@ -61,11 +61,15 @@ def get_downloader_html() -> str:
       color: var(--text-body);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      max-width: 100vw;
+      overflow-x: hidden;
     }
 
     body {
       min-height: 100dvh;
+      max-width: 100vw;
       overflow-x: hidden;
+      position: relative;
       font-family: var(--font-body);
       color: var(--text-body);
       line-height: 1.6;
@@ -811,12 +815,14 @@ def get_downloader_html() -> str:
       display: none;
       position: fixed;
       bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 0;
+      right: 0;
+      margin: 0 auto;
       width: 100%;
       max-width: 1000px;
-      z-index: 40;
-      background: rgba(10,10,12,0.94);
+      z-index: 100;
+      box-sizing: border-box;
+      background: rgba(10,10,12,0.95);
       backdrop-filter: blur(20px) saturate(1.6);
       -webkit-backdrop-filter: blur(20px) saturate(1.6);
       border-top: 1px solid var(--line-strong);
@@ -826,11 +832,12 @@ def get_downloader_html() -> str:
       padding-bottom: max(10px, env(safe-area-inset-bottom));
       align-items: center;
       gap: 14px;
-      animation: bar-up 0.35s var(--ease);
+      transform: none;
+      animation: bar-slide-up 0.35s var(--ease);
     }
-    @keyframes bar-up {
-      from { transform: translateX(-50%) translateY(100%); }
-      to   { transform: translateX(-50%) translateY(0); }
+    @keyframes bar-slide-up {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
     }
 
     .sticky-thumb {
@@ -995,21 +1002,35 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       RESPONSIVE — breakpoint at 900px
+       RESPONSIVE — breakpoint at 860px (Mobile & Tablet)
     ============================================================ */
-    @media (max-width: 900px) {
+    @media (max-width: 860px) {
       .hero-wrap {
         grid-template-columns: 1fr;
-        gap: 32px;
-        padding: 36px 16px 32px;
+        gap: 20px;
+        padding: 24px 16px 20px;
       }
-      .hero-sub { max-width: 100%; }
-      .hero-title { font-size: clamp(26px, 8vw, 36px); }
+      .hero-eyebrow {
+        margin-bottom: 8px;
+        font-size: 11px;
+      }
+      .hero-title {
+        font-size: clamp(24px, 7vw, 32px);
+        margin-bottom: 8px;
+        line-height: 1.15;
+      }
+      .hero-sub {
+        max-width: 100%;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 14px;
+      }
 
       .platform-grid {
         flex-wrap: nowrap;
         overflow-x: auto;
         padding-bottom: 4px;
+        margin-bottom: 4px;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
       }
@@ -1018,39 +1039,115 @@ def get_downloader_html() -> str:
 
       .nav-link { display: none; }
       .live-pill { display: none; }
-    }
 
-    @media (max-width: 640px) {
       .url-input { font-size: 16px; } /* Prevents iOS Safari auto-zoom on input tap */
-      .results-wrap { padding: 0 16px 120px; }
+      .results-wrap { padding: 0 16px 140px; }
 
-      .media-row { flex-direction: column; gap: 14px; padding: 16px; }
-      .thumb-frame { width: 100%; min-width: 0; }
-      .video-title { font-size: 15px; }
+      .media-row {
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+        border-radius: var(--r-lg);
+      }
+      .thumb-frame {
+        width: 100%;
+        min-width: 0;
+      }
+      .video-title {
+        font-size: 15px;
+        line-height: 1.4;
+      }
 
-      .quick-row { flex-direction: column; }
-      .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
+      .quick-row {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+      }
+      .btn-primary, .btn-ghost {
+        width: 100%;
+        justify-content: center;
+        padding: 11px 16px;
+        font-size: 13.5px;
+      }
 
-      .cards-grid { grid-template-columns: 1fr; }
-      .fc-num { font-size: 26px; }
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .format-card {
+        padding: 14px;
+      }
+      .fc-num {
+        font-size: 26px;
+      }
+      .btn-card-dl {
+        width: 100%;
+        padding: 11px;
+        font-size: 13px;
+      }
 
       .sticky-bar {
-        border-left: none;
-        border-right: none;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 10px 14px;
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        border-left: none !important;
+        border-right: none !important;
+        padding: 8px 12px !important;
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+        gap: 8px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        box-sizing: border-box !important;
       }
-      .sticky-thumb { display: none !important; }
-      .sticky-btns { width: 100%; }
-      .sticky-btn-p, .sticky-btn-s { flex: 1; justify-content: center; }
+      .sticky-thumb {
+        display: none !important;
+      }
+      .sticky-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+      }
+      .sticky-title {
+        font-size: 12.5px;
+        max-width: 65%;
+      }
+      .sticky-sub {
+        font-size: 11px;
+        margin-top: 0;
+      }
+      .sticky-btns {
+        width: 100% !important;
+        display: flex !important;
+        gap: 8px !important;
+      }
+      .sticky-btn-p, .sticky-btn-s {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        justify-content: center !important;
+        padding: 10px 8px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+      }
 
-      .features-inner { grid-template-columns: 1fr; gap: 24px; }
-      .features-wrap  { padding: 32px 16px; }
-      footer { padding: 16px; }
+      .features-inner {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      .features-wrap {
+        padding: 32px 16px;
+      }
+      footer {
+        padding: 16px;
+      }
 
-      .toast-stack { right: 12px; left: 12px; max-width: 100%; }
+      .toast-stack {
+        right: 12px;
+        left: 12px;
+        max-width: 100%;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
