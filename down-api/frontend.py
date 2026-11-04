@@ -1278,7 +1278,7 @@ def get_downloader_html() -> str:
       <div style="position:relative; width:100%; max-width:100%; min-width:0;">
 
         <div class="download-box" id="downloadBox">
-          <form class="input-area" onsubmit="onFormSubmit(event)">
+          <form class="input-area" onsubmit="event.preventDefault(); run(); return false;">
             <label class="input-label" for="urlInput">Video link</label>
             <div class="input-row">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-subtle);flex-shrink:0;">
@@ -1316,7 +1316,7 @@ def get_downloader_html() -> str:
             </div>
 
             <!-- CTA button -->
-            <button type="submit" id="btnSubmit" class="btn-submit">
+            <button type="button" id="btnSubmit" class="btn-submit" onclick="run()">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
@@ -1819,7 +1819,7 @@ def get_downloader_html() -> str:
       if (!rawUrl) { document.getElementById('urlInput').focus(); return; }
 
       // Auto-prepend https:// if omitted
-      if (!/^https?:\\/\\//i.test(rawUrl)) {
+      if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
         rawUrl = "https://" + rawUrl;
         document.getElementById('urlInput').value = rawUrl;
       }
@@ -1874,57 +1874,49 @@ def get_downloader_html() -> str:
       stepTx.textContent = steps[0];
       const stTimer = setInterval(() => { si = (si+1) % steps.length; stepTx.textContent = steps[si]; }, 1800);
 
-      let data = null;
-
       try {
-        const res  = await fetch(`/api/info?url=${encodeURIComponent(rawUrl)}`);
-        const json = await res.json().catch(() => null);
+        let data = null;
 
-        if (res.ok && json && json.status === 'success') {
-          data = json;
-        } else {
-          throw new Error((json && (json.detail || json.message)) || 'Server extraction unavailable');
-        }
-      } catch (serverErr) {
-        console.warn('Server extraction failed, initiating direct client fallback:', serverErr.message);
-        stepTx.textContent = "Connecting via direct device network…";
         try {
+          const res  = await fetch('/api/info?url=' + encodeURIComponent(rawUrl));
+          const json = await res.json().catch(() => null);
+
+          if (res.ok && json && json.status === 'success') {
+            data = json;
+          } else {
+            throw new Error((json && (json.detail || json.message)) || 'Server extraction unavailable');
+          }
+        } catch (serverErr) {
+          console.warn('Server extraction failed, initiating direct client fallback:', serverErr.message);
+          stepTx.textContent = "Connecting via direct device network…";
           data = await clientSideFallback(rawUrl);
-        } catch (clientErr) {
-          console.error('Client fallback failed:', clientErr);
-          clearInterval(stTimer);
-          loadW.style.display = 'none';
-          showInlineError(serverErr.message || clientErr.message || 'Could not extract video. Please check the link and try again.');
-          return;
         }
-      }
 
-      clearInterval(stTimer);
-      if (!data || data.status !== 'success') {
+        clearInterval(stTimer);
+        if (!data || data.status !== 'success') {
+          throw new Error('Could not parse video streams.');
+        }
+
+        lastRenderedUrl = rawUrl;
+        lastRenderedTime = Date.now();
         loadW.style.display = 'none';
-        showInlineError('Could not parse video streams.');
-        return;
-      }
+        render(data, rawUrl);
 
-      lastRenderedUrl = rawUrl;
-      lastRenderedTime = Date.now();
-      loadW.style.display = 'none';
-      render(data, rawUrl);
-    } catch (err) {
-      clearInterval(stTimer);
-      loadW.style.display = 'none';
-      showInlineError(err.message || 'Something went wrong. Please check the link and try again.');
-    } finally {
-      isExtracting = false;
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-          <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-        </svg>
-        <span>Download</span>
-      `;
+      } catch (err) {
+        clearInterval(stTimer);
+        loadW.style.display = 'none';
+        showInlineError(err.message || 'Something went wrong. Please check the link and try again.');
+      } finally {
+        isExtracting = false;
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Download</span>
+        `;
+      }
     }
-  }
 
     /* ============================================================
        RENDER RESULTS
