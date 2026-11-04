@@ -1,9 +1,11 @@
 import datetime
 import logging
 import time
+import threading
+import collections
 import urllib.parse
 from collections import deque
-from typing import Optional
+from typing import Optional, Dict, Any, Tuple
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -51,6 +53,153 @@ root_logger.addHandler(log_handler)
 logger = logging.getLogger("api")
 START_TIME = time.time()
 REQUEST_STATS = {"total": 0, "success": 0, "errors": 0}
+
+# =========================================================================
+# VALIDATION, CACHING & DEDUPLICATION (Load-Reduction Engine)
+# =========================================================================
+BLOCKED_HOSTS = {
+    "localhost", "127.0.0.1", "0.0.0.0", "::1", "test", "example.com"
+}
+
+def validate_video_url(raw_url: str) -> str:
+    """Validates and normalizes target video URL. Rejects garbage and SSRF targets immediately."""
+    if not raw_url or not isinstance(raw_url, str):
+        raise HTTPException(status_code=400, detail="Missing video URL.")
+    
+    url = raw_url.strip()
+    if len(url) > 2048:
+        raise HTTPException(status_code=400, detail="URL is too long.")
+    
+    # Auto-prepend https:// if omitted by user
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid URL format.")
+    
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Scheme must be http or https.")
+    
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise HTTPException(status_code=400, detail="URL must contain a valid domain.")
+    
+    if hostname in BLOCKED_HOSTS or hostname.startswith("10.") or hostname.startswith("192.168.") or hostname.startswith("172."):
+        raise HTTPException(status_code=400, detail="Domain not permitted.")
+    
+    if "." not in hostname:
+        raise HTTPException(status_code=400, detail="Please enter a valid website domain.")
+    
+    return url
+
+
+def _get_client_ip(request: Request) -> str:
+    """Extracts real client IP behind reverse proxy / Cloudflare / Render."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+class MediaCache:
+    """In-memory TTL cache (10 minutes) for media metadata to eliminate redundant engine runs."""
+    def __init__(self, ttl: int = 600, max_size: int = 1000):
+        self.ttl = ttl
+        self.max_size = max_size
+        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._lock = threading.Lock()
+
+    def get(self, url: str) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            item = self._cache.get(url)
+            if not item:
+                return None
+            if time.time() - item["timestamp"] > self.ttl:
+                del self._cache[url]
+                return None
+            return item["data"]
+
+    def set(self, url: str, data: Dict[str, Any]):
+        with self._lock:
+            if len(self._cache) >= self.max_size:
+                now = time.time()
+                expired = [k for k, v in self._cache.items() if now - v["timestamp"] > self.ttl]
+                for k in expired:
+                    del self._cache[k]
+                if len(self._cache) >= self.max_size:
+                    for k in list(self._cache.keys())[:100]:
+                        del self._cache[k]
+            self._cache[url] = {"timestamp": time.time(), "data": data}
+
+
+class InFlightManager:
+    """
+    Prevents duplicate concurrent scraper runs for the same URL.
+    - If same client fires duplicate requests within 3s: blocks with 429 Too Many Requests.
+    - If other clients request same URL in-flight: waits for primary worker & shares result.
+    """
+    def __init__(self):
+        self._events: Dict[str, threading.Event] = {}
+        self._client_recent: Dict[Tuple[str, str], float] = {}
+        self._lock = threading.Lock()
+
+    def acquire(self, client_ip: str, url: str) -> Tuple[bool, threading.Event]:
+        with self._lock:
+            now = time.time()
+            recent_t = self._client_recent.get((client_ip, url))
+            if recent_t and (now - recent_t < 3.0):
+                raise HTTPException(
+                    status_code=429,
+                    detail="Duplicate request blocked. Extraction is already in progress, please wait."
+                )
+            self._client_recent[(client_ip, url)] = now
+            if len(self._client_recent) > 1000:
+                self._client_recent = {k: v for k, v in self._client_recent.items() if now - v < 30}
+
+            if url in self._events:
+                # Another worker is already extracting this URL
+                return False, self._events[url]
+
+            event = threading.Event()
+            self._events[url] = event
+            return True, event
+
+    def release(self, url: str):
+        with self._lock:
+            event = self._events.pop(url, None)
+            if event:
+                event.set()
+
+
+class RateLimiter:
+    """Sliding-window rate limiter per client IP (max 35 requests per 60s)."""
+    def __init__(self, max_reqs: int = 35, window_sec: int = 60):
+        self.max_reqs = max_reqs
+        self.window = window_sec
+        self._records: Dict[str, deque] = {}
+        self._lock = threading.Lock()
+
+    def check(self, client_ip: str):
+        with self._lock:
+            now = time.time()
+            q = self._records.setdefault(client_ip, deque())
+            while q and q[0] < now - self.window:
+                q.popleft()
+            if len(q) >= self.max_reqs:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Rate limit reached. Please wait a moment before sending more requests."
+                )
+            q.append(now)
+
+
+media_cache = MediaCache(ttl=600, max_size=1000)
+inflight_mgr = InFlightManager()
+rate_limiter = RateLimiter(max_reqs=35, window_sec=60)
 
 app = FastAPI(
     title="Media Downloader API",
@@ -396,7 +545,7 @@ def _run_ytdlp_info(target_url: str):
     }
 
 
-def _process_info(target_url: str, engine: Optional[str] = None):
+def _run_extraction_waterfall(target_url: str, engine: Optional[str] = None):
     engine = (engine or "").lower().strip()
 
     if engine == "tikwm":
@@ -440,17 +589,53 @@ def _process_info(target_url: str, engine: Optional[str] = None):
         )
 
 
+def _process_info(target_url: str, engine: Optional[str] = None, client_ip: str = "unknown"):
+    # 1. Validate & sanitize URL immediately (rejects garbage / SSRF without scraper load)
+    target_url = validate_video_url(target_url)
+
+    # 2. Return from in-memory cache if requested recently (<1ms latency)
+    cached = media_cache.get(target_url)
+    if cached:
+        logger.info(f"Cache HIT for {target_url} -> 0ms zero engine load")
+        return cached
+
+    # 3. In-flight single-worker locking & duplicate burst blocker
+    is_worker, event = inflight_mgr.acquire(client_ip, target_url)
+    if not is_worker:
+        logger.info(f"Waiting for in-flight extraction on {target_url}...")
+        if event.wait(timeout=16):
+            cached = media_cache.get(target_url)
+            if cached:
+                return cached
+        raise HTTPException(
+            status_code=429,
+            detail="A request for this media URL is currently being processed. Please retry in a few seconds."
+        )
+
+    try:
+        data = _run_extraction_waterfall(target_url, engine=engine)
+        media_cache.set(target_url, data)
+        return data
+    finally:
+        inflight_mgr.release(target_url)
+
+
 @app.get("/api/info")
 def get_info(
+    request: Request,
     url: str = Query(..., description="Target video URL (YouTube, Shorts, Instagram, TikTok, etc.)"),
     engine: Optional[str] = Query(None, description="Optional engine override (e.g. 'vidssave', 'savefrom', 'yt-dlp'). Default is automatic smart fallback.")
 ):
-    return _process_info(url, engine=engine)
+    client_ip = _get_client_ip(request)
+    rate_limiter.check(client_ip)
+    return _process_info(url, engine=engine, client_ip=client_ip)
 
 
 @app.post("/api/info")
-def post_info(req: MediaInfoRequest):
-    return _process_info(req.url, engine=req.engine)
+def post_info(request: Request, req: MediaInfoRequest):
+    client_ip = _get_client_ip(request)
+    rate_limiter.check(client_ip)
+    return _process_info(req.url, engine=req.engine, client_ip=client_ip)
 
 
 def _run_vidssave_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None):
@@ -551,6 +736,7 @@ def _process_download(
     output_format: Optional[str] = None,
     engine: Optional[str] = None
 ):
+    target_url = validate_video_url(target_url)
     media_type = (media_type or "video").lower()
     quality = (quality or "best").lower()
     engine = (engine or "").lower().strip()
@@ -598,27 +784,36 @@ def _process_download(
 
 @app.get("/api/download")
 def get_download(
+    request: Request,
     url: str = Query(..., description="Target video URL (YouTube, Shorts, Instagram, TikTok, etc.)"),
     type: str = Query("video", description="'video' or 'audio'"),
     quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or 'best')"),
     format: Optional[str] = Query(None, description="Output format (mp4, mp3)"),
     engine: Optional[str] = Query(None, description="Optional engine override ('vidssave', 'savefrom', 'yt-dlp'). Default is automatic smart fallback.")
 ):
+    client_ip = _get_client_ip(request)
+    rate_limiter.check(client_ip)
     return _process_download(url, media_type=type, quality=quality, output_format=format, engine=engine)
 
 
 @app.post("/api/download")
-def post_download(req: DownloadRequest):
+def post_download(request: Request, req: DownloadRequest):
+    client_ip = _get_client_ip(request)
+    rate_limiter.check(client_ip)
     return _process_download(req.url, media_type=req.type, quality=req.quality, output_format=req.format, engine=req.engine)
 
 
 @app.get("/api/stream")
 def stream_media(
+    request: Request,
     url: str = Query(..., description="Target video URL"),
     type: str = Query("video", description="'video' or 'audio'"),
     quality: str = Query("best", description="Quality (e.g. 720p, 1080p, 360p, or 'best')"),
     engine: Optional[str] = Query(None, description="Optional engine override. Default is automatic.")
 ):
+    client_ip = _get_client_ip(request)
+    rate_limiter.check(client_ip)
+    url = validate_video_url(url)
     dl_info = _process_download(url, media_type=type, quality=quality, engine=engine)
     direct_url = dl_info.get("download_url")
 

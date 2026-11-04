@@ -8,33 +8,43 @@ def get_downloader_html() -> str:
   <meta name="description" content="Paste any video link and download it instantly. YouTube, Shorts, TikTok, Instagram Reels, and Twitter supported. Free, fast, no sign-up required.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;450;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* ============================================================
-       DESIGN TOKENS
+       DESIGN TOKENS & TYPOGRAPHY SYSTEM
+       - Display / Headings: Geist (Bold, geometric, clean)
+       - Body / Paragraphs:  Plus Jakarta Sans (Legible, warm, optical clarity)
+       - Contrast: Calibrated WCAG AA compliant contrast for all body text
     ============================================================ */
     :root {
-      --bg:          #0d0d0d;
-      --bg-raised:   #161616;
-      --bg-elevated: #1f1f1f;
-      --bg-hover:    #242424;
-      --line:        rgba(255,255,255,0.07);
-      --line-strong: rgba(255,255,255,0.14);
-      --line-focus:  rgba(255,255,255,0.28);
-      --text-hi:     #f4f4f5;
-      --text-md:     #a1a1aa;
-      --text-lo:     #52525b;
-      --text-xlo:    #3f3f46;
+      --bg:          #0a0a0c;
+      --bg-raised:   #141417;
+      --bg-elevated: #1d1d22;
+      --bg-hover:    #25252b;
+      --line:        rgba(255,255,255,0.08);
+      --line-strong: rgba(255,255,255,0.16);
+      --line-focus:  rgba(255,255,255,0.32);
+
+      --text-hi:     #ffffff;
+      --text-body:   #d8d8de;       /* Warm readable light zinc for all paragraphs */
+      --text-muted:  #a6a6b0;       /* Readable secondary */
+      --text-subtle: #797985;       /* Crisp tertiary for hints/fine-print */
+
       --success:     #4ade80;
       --danger:      #f87171;
+
       --r-xs:        6px;
       --r-sm:        10px;
       --r-md:        14px;
       --r-lg:        20px;
       --r-xl:        26px;
       --r-pill:      999px;
-      --font:        'Geist', system-ui, -apple-system, sans-serif;
+
+      --font-display: 'Geist', system-ui, -apple-system, sans-serif;
+      --font-body:    'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+
       --ease:        cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -46,9 +56,9 @@ def get_downloader_html() -> str:
     }
 
     html {
-      font-family: var(--font);
+      font-family: var(--font-body);
       background: var(--bg);
-      color: var(--text-md);
+      color: var(--text-body);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
@@ -56,8 +66,17 @@ def get_downloader_html() -> str:
     body {
       min-height: 100dvh;
       overflow-x: hidden;
-      /* Subtle CSS grain texture — zero JS, zero WebGL */
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      font-family: var(--font-body);
+      color: var(--text-body);
+      line-height: 1.6;
+      /* Subtle CSS grain texture for depth */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    }
+
+    /* Paragraphs and typography rules */
+    p {
+      color: var(--text-body);
+      line-height: 1.65;
     }
 
     /* ============================================================
@@ -72,7 +91,7 @@ def get_downloader_html() -> str:
       justify-content: space-between;
       padding: 0 24px;
       height: 56px;
-      background: rgba(13,13,13,0.88);
+      background: rgba(10,10,12,0.88);
       backdrop-filter: blur(20px) saturate(1.6);
       -webkit-backdrop-filter: blur(20px) saturate(1.6);
       border-bottom: 1px solid var(--line);
@@ -95,6 +114,7 @@ def get_downloader_html() -> str:
       flex-shrink: 0;
     }
     .logo-name {
+      font-family: var(--font-display);
       font-size: 15px;
       font-weight: 700;
       letter-spacing: -0.4px;
@@ -110,9 +130,10 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 11px;
+      font-family: var(--font-body);
+      font-size: 11.5px;
       font-weight: 500;
-      color: var(--text-lo);
+      color: var(--text-muted);
     }
     .live-dot {
       width: 6px;
@@ -124,15 +145,16 @@ def get_downloader_html() -> str:
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
     .nav-link {
+      font-family: var(--font-body);
       font-size: 13px;
       font-weight: 500;
-      color: var(--text-lo);
+      color: var(--text-muted);
       text-decoration: none;
       padding: 5px 10px;
       border-radius: var(--r-xs);
       transition: color 0.15s;
     }
-    .nav-link:hover { color: var(--text-md); }
+    .nav-link:hover { color: var(--text-hi); }
 
     /* ============================================================
        PAGE SHELL
@@ -144,13 +166,13 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       HERO — 2-col above 900px (FIX: was 768px, too cramped)
+       HERO (Responsive 2-column on desktop >= 900px)
     ============================================================ */
     .hero-wrap {
       max-width: 1000px;
       margin: 0 auto;
       width: 100%;
-      padding: 72px 32px 56px;
+      padding: 68px 32px 52px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 64px;
@@ -161,11 +183,12 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      font-size: 11px;
+      font-family: var(--font-body);
+      font-size: 11.5px;
       font-weight: 600;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
-      color: var(--text-lo);
+      color: var(--text-muted);
       margin-bottom: 20px;
     }
     .eyebrow-dot {
@@ -176,19 +199,23 @@ def get_downloader_html() -> str:
       flex-shrink: 0;
     }
     .hero-title {
+      font-family: var(--font-display);
       font-size: clamp(28px, 4vw, 44px);
       font-weight: 800;
-      letter-spacing: -1.5px;
-      line-height: 1.1;
+      letter-spacing: -1.4px;
+      line-height: 1.12;
       color: var(--text-hi);
       margin-bottom: 14px;
     }
     .hero-sub {
-      font-size: 15px;
-      color: var(--text-lo);
-      line-height: 1.65;
+      font-family: var(--font-body);
+      font-size: 15.5px;
+      font-weight: 400;
+      color: var(--text-body);
+      line-height: 1.7;
+      letter-spacing: -0.15px;
       margin-bottom: 28px;
-      max-width: 38ch;
+      max-width: 40ch;
     }
 
     .platform-grid {
@@ -200,20 +227,20 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 7px;
+      font-family: var(--font-body);
       font-size: 12px;
       font-weight: 500;
-      color: var(--text-lo);
+      color: var(--text-muted);
       background: var(--bg-raised);
       border: 1px solid var(--line);
       padding: 6px 12px;
       border-radius: var(--r-pill);
       cursor: pointer;
-      font-family: var(--font);
       transition: color 0.2s, border-color 0.2s, background 0.2s;
       user-select: none;
     }
     .platform-btn:hover {
-      color: var(--text-md);
+      color: var(--text-hi);
       border-color: var(--line-strong);
       background: var(--bg-elevated);
     }
@@ -226,19 +253,17 @@ def get_downloader_html() -> str:
 
     /* ============================================================
        DOWNLOAD BOX
-       FIX: Removed overflow:hidden — was clipping history dropdown.
-       Border-radius now applied to inner children individually.
     ============================================================ */
     .download-box {
       background: var(--bg-raised);
       border: 1px solid var(--line);
       border-radius: var(--r-xl);
-      /* NO overflow:hidden here — history panel must overflow */
       position: relative;
-      transition: border-color 0.25s var(--ease);
+      transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
     }
     .download-box:focus-within {
       border-color: var(--line-strong);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     .input-area {
@@ -246,11 +271,12 @@ def get_downloader_html() -> str:
     }
 
     .input-label {
-      font-size: 11px;
+      font-family: var(--font-body);
+      font-size: 11.5px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: var(--text-xlo);
+      color: var(--text-muted);
       margin-bottom: 8px;
       display: block;
     }
@@ -263,9 +289,12 @@ def get_downloader_html() -> str:
       border: 1px solid var(--line);
       border-radius: var(--r-md);
       padding: 10px 10px 10px 14px;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .input-row:focus-within { border-color: var(--line-focus); }
+    .input-row:focus-within {
+      border-color: var(--line-focus);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
 
     .url-input {
       flex: 1;
@@ -274,11 +303,11 @@ def get_downloader_html() -> str:
       border: none;
       outline: none;
       color: var(--text-hi);
-      font-family: var(--font);
+      font-family: var(--font-body);
       font-size: 14px;
       caret-color: var(--text-hi);
     }
-    .url-input::placeholder { color: var(--text-xlo); }
+    .url-input::placeholder { color: var(--text-subtle); }
 
     .btn-inline {
       background: none;
@@ -286,29 +315,30 @@ def get_downloader_html() -> str:
       cursor: pointer;
       display: flex;
       align-items: center;
-      padding: 4px;
+      padding: 5px;
       border-radius: 6px;
       flex-shrink: 0;
-      color: var(--text-lo);
+      color: var(--text-muted);
       transition: color 0.15s, background 0.15s;
     }
-    .btn-inline:hover { color: var(--text-md); background: var(--bg-elevated); }
+    .btn-inline:hover { color: var(--text-hi); background: var(--bg-elevated); }
 
-    /* Platform detection badge (shown when URL typed) */
+    /* Platform detection badge */
     .detected-badge {
       display: none;
       align-items: center;
       gap: 7px;
+      font-family: var(--font-body);
       font-size: 11px;
       font-weight: 600;
-      color: var(--text-lo);
+      color: var(--text-muted);
       margin-top: 10px;
       padding: 0 2px;
     }
     .detected-badge.show { display: flex; }
     .detected-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
-    /* FIX: form wraps submit button so mobile keyboard "Go" key works */
+    /* Submit button */
     .btn-submit {
       display: flex;
       align-items: center;
@@ -319,18 +349,22 @@ def get_downloader_html() -> str:
       margin-top: 10px;
       background: var(--text-hi);
       color: #0d0d0d;
-      font-family: var(--font);
+      font-family: var(--font-display);
       font-size: 14px;
       font-weight: 700;
       border: none;
       border-radius: var(--r-md);
       cursor: pointer;
       letter-spacing: -0.2px;
-      transition: background 0.15s, transform 0.15s var(--ease);
+      transition: background 0.15s, transform 0.15s var(--ease), opacity 0.15s;
     }
     .btn-submit:hover  { background: #e4e4e7; }
     .btn-submit:active { transform: scale(0.985); }
-    .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     .input-footer {
       padding: 10px 16px 14px;
@@ -341,27 +375,29 @@ def get_downloader_html() -> str:
       gap: 8px;
       border-top: 1px solid var(--line);
     }
-    .hint-text { font-size: 11px; color: var(--text-xlo); }
+    .hint-text {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: var(--text-subtle);
+    }
     .btn-try {
-      font-size: 11px;
+      font-family: var(--font-body);
+      font-size: 11.5px;
       font-weight: 500;
-      color: var(--text-lo);
+      color: var(--text-muted);
       background: none;
       border: none;
       cursor: pointer;
-      font-family: var(--font);
       text-decoration: underline;
       text-underline-offset: 2px;
-      text-decoration-color: var(--text-xlo);
+      text-decoration-color: var(--text-subtle);
       transition: color 0.15s;
       padding: 0;
     }
-    .btn-try:hover { color: var(--text-md); }
+    .btn-try:hover { color: var(--text-hi); }
 
     /* ============================================================
        HISTORY PANEL
-       FIX: position:absolute + z-index so it overlays content below
-       without being clipped by parent border-radius.
     ============================================================ */
     .history-panel {
       display: none;
@@ -380,11 +416,12 @@ def get_downloader_html() -> str:
     }
     .history-panel.open { display: flex; flex-direction: column; }
     .history-title {
+      font-family: var(--font-body);
       font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-xlo);
+      letter-spacing: 0.6px;
+      color: var(--text-subtle);
       padding: 10px 14px 4px;
     }
     .history-item {
@@ -394,15 +431,15 @@ def get_downloader_html() -> str:
       padding: 8px 14px;
       cursor: pointer;
       transition: background 0.15s;
-      font-size: 12px;
-      color: var(--text-lo);
+      font-family: var(--font-body);
+      font-size: 12.5px;
+      color: var(--text-muted);
       border: none;
       background: none;
       text-align: left;
-      font-family: var(--font);
       width: 100%;
     }
-    .history-item:hover { background: var(--bg-elevated); color: var(--text-md); }
+    .history-item:hover { background: var(--bg-elevated); color: var(--text-hi); }
     .history-item svg { flex-shrink: 0; }
     .history-url {
       overflow: hidden;
@@ -413,7 +450,7 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       LOADING STATE — skeleton shimmer
+       LOADING SKELETON
     ============================================================ */
     .loading-wrap {
       display: none;
@@ -438,18 +475,19 @@ def get_downloader_html() -> str:
     .skel-card  { height: 90px; border-radius: var(--r-md); }
 
     .loading-step {
-      font-size: 12px;
-      color: var(--text-lo);
+      font-family: var(--font-body);
+      font-size: 12.5px;
+      color: var(--text-muted);
       margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
     .step-spin {
-      width: 12px; height: 12px;
+      width: 13px; height: 13px;
       border-radius: 50%;
       border: 1.5px solid var(--line-strong);
-      border-top-color: var(--text-md);
+      border-top-color: var(--text-hi);
       animation: spin 0.8s linear infinite;
       flex-shrink: 0;
     }
@@ -465,30 +503,31 @@ def get_downloader_html() -> str:
       padding: 12px 14px;
       margin: 0 16px 16px;
       background: rgba(248,113,113,0.07);
-      border: 1px solid rgba(248,113,113,0.2);
+      border: 1px solid rgba(248,113,113,0.22);
       border-radius: var(--r-sm);
+      font-family: var(--font-body);
       font-size: 13px;
       color: #fca5a5;
     }
     .error-icon { flex-shrink: 0; color: var(--danger); margin-top: 1px; }
     .retry-link {
-      margin-top: 4px;
-      display: block;
-      font-size: 11px;
-      color: var(--text-lo);
+      margin-top: 5px;
+      display: inline-block;
+      font-family: var(--font-body);
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
       text-decoration: underline;
       text-underline-offset: 2px;
       cursor: pointer;
       background: none;
       border: none;
       padding: 0;
-      font-family: var(--font);
     }
-    .retry-link:hover { color: var(--text-md); }
+    .retry-link:hover { color: var(--text-hi); }
 
     /* ============================================================
        RESULTS
-       FIX: margin-bottom 140px (was 100px) to clear sticky bar + safe area
     ============================================================ */
     .results-wrap {
       display: none;
@@ -503,7 +542,6 @@ def get_downloader_html() -> str:
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Media preview row */
     .media-row {
       display: flex;
       gap: 20px;
@@ -537,6 +575,7 @@ def get_downloader_html() -> str:
       right: 6px;
       background: rgba(0,0,0,0.78);
       color: #fff;
+      font-family: var(--font-body);
       font-size: 11px;
       font-weight: 600;
       padding: 2px 7px;
@@ -551,10 +590,11 @@ def get_downloader_html() -> str:
       gap: 14px;
     }
     .video-title {
-      font-size: 16px;
+      font-family: var(--font-display);
+      font-size: 17px;
       font-weight: 700;
       color: var(--text-hi);
-      line-height: 1.4;
+      line-height: 1.45;
       letter-spacing: -0.3px;
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -568,7 +608,7 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      font-family: var(--font);
+      font-family: var(--font-display);
       font-size: 13px;
       font-weight: 600;
       padding: 9px 16px;
@@ -586,12 +626,12 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      font-family: var(--font);
+      font-family: var(--font-display);
       font-size: 13px;
       font-weight: 600;
       padding: 9px 16px;
       background: transparent;
-      color: var(--text-md);
+      color: var(--text-muted);
       border: 1px solid var(--line);
       border-radius: var(--r-sm);
       cursor: pointer;
@@ -614,10 +654,10 @@ def get_downloader_html() -> str:
     }
     .tab-grp { display: flex; }
     .tab {
-      font-family: var(--font);
+      font-family: var(--font-display);
       font-size: 13px;
-      font-weight: 500;
-      color: var(--text-lo);
+      font-weight: 600;
+      color: var(--text-muted);
       background: none;
       border: none;
       border-bottom: 2px solid transparent;
@@ -630,22 +670,27 @@ def get_downloader_html() -> str:
       gap: 7px;
       white-space: nowrap;
     }
-    .tab:hover { color: var(--text-md); }
+    .tab:hover { color: var(--text-hi); }
     .tab.active { color: var(--text-hi); border-bottom-color: var(--text-hi); }
 
     .tab-count {
+      font-family: var(--font-body);
       font-size: 11px;
       font-weight: 600;
       padding: 2px 6px;
       border-radius: var(--r-pill);
       background: var(--bg-elevated);
-      color: var(--text-lo);
+      color: var(--text-muted);
     }
-    .tab.active .tab-count { background: var(--bg-hover); color: var(--text-md); }
-    .tab-hint { font-size: 11px; color: var(--text-xlo); }
+    .tab.active .tab-count { background: var(--bg-hover); color: var(--text-hi); }
+    .tab-hint {
+      font-family: var(--font-body);
+      font-size: 11.5px;
+      color: var(--text-subtle);
+    }
 
     /* ============================================================
-       FORMAT CARDS — staggered entrance
+       FORMAT CARDS
     ============================================================ */
     .cards-grid {
       display: grid;
@@ -664,7 +709,7 @@ def get_downloader_html() -> str:
       gap: 12px;
       transition: border-color 0.2s, background 0.2s;
       animation: card-in 0.4s var(--ease) both;
-      animation-delay: calc(var(--i, 0) * 55ms);
+      animation-delay: calc(var(--i, 0) * 50ms);
     }
     @keyframes card-in {
       from { opacity: 0; transform: translateY(10px); }
@@ -682,22 +727,30 @@ def get_downloader_html() -> str:
     .fc-top { display: flex; justify-content: space-between; align-items: flex-start; }
 
     .fc-num {
+      font-family: var(--font-display);
       font-size: 32px;
       font-weight: 800;
       letter-spacing: -1px;
       color: var(--text-hi);
       line-height: 1;
     }
-    .fc-unit { font-size: 14px; font-weight: 500; color: var(--text-lo); margin-left: 1px; }
-    .fc-sub  { font-size: 11px; color: var(--text-lo); font-weight: 500; margin-top: 3px; }
+    .fc-unit { font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 1px; }
+    .fc-sub  {
+      font-family: var(--font-body);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 3px;
+    }
 
     .fc-badge {
+      font-family: var(--font-body);
       font-size: 10px;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: var(--r-pill);
       border: 1px solid var(--line);
-      color: var(--text-lo);
+      color: var(--text-muted);
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -708,14 +761,23 @@ def get_downloader_html() -> str:
     }
 
     .fc-specs {
+      font-family: var(--font-body);
       border-top: 1px solid var(--line);
       padding-top: 10px;
       display: flex;
       flex-direction: column;
       gap: 5px;
     }
-    .fc-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-lo); }
-    .fc-row b { color: var(--text-md); font-weight: 500; }
+    .fc-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .fc-row b {
+      color: var(--text-body);
+      font-weight: 600;
+    }
 
     .btn-card-dl {
       width: 100%;
@@ -723,14 +785,14 @@ def get_downloader_html() -> str:
       align-items: center;
       justify-content: center;
       gap: 7px;
-      font-family: var(--font);
-      font-size: 12px;
+      font-family: var(--font-display);
+      font-size: 12.5px;
       font-weight: 600;
       padding: 9px;
       border-radius: var(--r-sm);
       border: 1px solid var(--line);
       background: transparent;
-      color: var(--text-lo);
+      color: var(--text-muted);
       cursor: pointer;
       transition: all 0.2s var(--ease);
     }
@@ -744,8 +806,6 @@ def get_downloader_html() -> str:
 
     /* ============================================================
        STICKY BOTTOM BAR
-       FIX: max-width: 1000px so it doesn't span ultra-wide screens
-       FIX: left/right centering with transform trick
     ============================================================ */
     .sticky-bar {
       display: none;
@@ -756,7 +816,7 @@ def get_downloader_html() -> str:
       width: 100%;
       max-width: 1000px;
       z-index: 40;
-      background: rgba(13,13,13,0.94);
+      background: rgba(10,10,12,0.94);
       backdrop-filter: blur(20px) saturate(1.6);
       -webkit-backdrop-filter: blur(20px) saturate(1.6);
       border-top: 1px solid var(--line-strong);
@@ -773,7 +833,6 @@ def get_downloader_html() -> str:
       to   { transform: translateX(-50%) translateY(0); }
     }
 
-    /* Mini thumbnail in sticky bar */
     .sticky-thumb {
       width: 48px;
       height: 32px;
@@ -787,6 +846,7 @@ def get_downloader_html() -> str:
 
     .sticky-info { flex: 1; min-width: 0; }
     .sticky-title {
+      font-family: var(--font-display);
       font-size: 13px;
       font-weight: 600;
       color: var(--text-hi);
@@ -794,7 +854,12 @@ def get_downloader_html() -> str:
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .sticky-sub { font-size: 11px; color: var(--text-lo); margin-top: 2px; }
+    .sticky-sub {
+      font-family: var(--font-body);
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
 
     .sticky-btns { display: flex; gap: 8px; flex-shrink: 0; }
 
@@ -802,7 +867,7 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-family: var(--font);
+      font-family: var(--font-display);
       font-size: 13px;
       font-weight: 600;
       padding: 9px 16px;
@@ -821,12 +886,12 @@ def get_downloader_html() -> str:
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-family: var(--font);
+      font-family: var(--font-display);
       font-size: 13px;
       font-weight: 600;
       padding: 9px 14px;
       background: transparent;
-      color: var(--text-md);
+      color: var(--text-muted);
       border: 1px solid var(--line-strong);
       border-radius: var(--r-sm);
       cursor: pointer;
@@ -851,8 +916,21 @@ def get_downloader_html() -> str:
       grid-template-columns: repeat(3, 1fr);
       gap: 40px;
     }
-    .feat-title { font-size: 14px; font-weight: 700; color: var(--text-hi); letter-spacing: -0.2px; margin-bottom: 6px; }
-    .feat-desc  { font-size: 13px; color: var(--text-lo); line-height: 1.6; }
+    .feat-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-hi);
+      letter-spacing: -0.2px;
+      margin-bottom: 6px;
+    }
+    .feat-desc  {
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
 
     footer {
       border-top: 1px solid var(--line);
@@ -863,10 +941,20 @@ def get_downloader_html() -> str:
       flex-wrap: wrap;
       gap: 12px;
     }
-    .footer-left { font-size: 12px; color: var(--text-xlo); }
+    .footer-left {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: var(--text-subtle);
+    }
     .footer-links { display: flex; gap: 16px; }
-    .footer-links a { font-size: 12px; color: var(--text-xlo); text-decoration: none; transition: color 0.15s; }
-    .footer-links a:hover { color: var(--text-lo); }
+    .footer-links a {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: var(--text-subtle);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--text-muted); }
 
     /* ============================================================
        TOAST
@@ -886,6 +974,7 @@ def get_downloader_html() -> str:
       background: var(--bg-elevated);
       border: 1px solid var(--line-strong);
       color: var(--text-hi);
+      font-family: var(--font-body);
       font-size: 13px;
       font-weight: 500;
       padding: 10px 14px;
@@ -905,7 +994,7 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       RESPONSIVE — breakpoint at 900px (FIX: was 768px)
+       RESPONSIVE — breakpoint at 900px
     ============================================================ */
     @media (max-width: 900px) {
       .hero-wrap {
@@ -916,7 +1005,6 @@ def get_downloader_html() -> str:
       .hero-sub { max-width: 100%; }
       .hero-title { font-size: clamp(26px, 8vw, 36px); }
 
-      /* Platform pills: horizontal scroll on narrow screens */
       .platform-grid {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -932,7 +1020,6 @@ def get_downloader_html() -> str:
     }
 
     @media (max-width: 640px) {
-      /* Results */
       .results-wrap { padding: 0 16px; }
 
       .media-row { flex-direction: column; gap: 14px; padding: 16px; }
@@ -942,11 +1029,9 @@ def get_downloader_html() -> str:
       .quick-row { flex-direction: column; }
       .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
 
-      /* Format cards: 1 column */
       .cards-grid { grid-template-columns: 1fr; }
       .fc-num { font-size: 26px; }
 
-      /* Sticky bar */
       .sticky-bar {
         border-left: none;
         border-right: none;
@@ -976,13 +1061,13 @@ def get_downloader_html() -> str:
 </head>
 <body>
 
-  <!-- Hidden <a> tag for downloads — FIX: avoids window.location.href page-reload UX -->
+  <!-- Hidden <a> tag for downloads -->
   <a id="dlAnchor" style="display:none;" aria-hidden="true"></a>
 
   <header class="site-header">
     <a href="/" class="logo">
       <div class="logo-mark">
-        <svg width="14" height="14" fill="none" stroke="#0d0d0d" stroke-width="2.5" viewBox="0 0 24 24">
+        <svg width="14" height="14" fill="none" stroke="#0a0a0c" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
       </div>
@@ -1014,19 +1099,19 @@ def get_downloader_html() -> str:
           Paste a link from YouTube, TikTok, Instagram, or Twitter. Pick your quality. It downloads straight to your device — no apps, no sign-up.
         </p>
         <div class="platform-grid">
-          <button class="platform-btn" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">
+          <button class="platform-btn" type="button" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">
             <span class="p-dot" style="background:#ff2020;"></span> YouTube
           </button>
-          <button class="platform-btn" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">
+          <button class="platform-btn" type="button" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">
             <span class="p-dot" style="background:#ff4444;"></span> Shorts
           </button>
-          <button class="platform-btn" onclick="tryUrl('https://www.tiktok.com/@tiktok/video/7106594312292453675')">
+          <button class="platform-btn" type="button" onclick="tryUrl('https://www.tiktok.com/@tiktok/video/7106594312292453675')">
             <span class="p-dot" style="background:#69c9d0;"></span> TikTok
           </button>
-          <button class="platform-btn" onclick="toast('Paste your Instagram Reels link in the box')">
+          <button class="platform-btn" type="button" onclick="focusWithPlatform('Instagram')">
             <span class="p-dot" style="background:#e1306c;"></span> Instagram
           </button>
-          <button class="platform-btn" onclick="toast('Paste your Twitter/X link in the box')">
+          <button class="platform-btn" type="button" onclick="focusWithPlatform('Twitter / X')">
             <span class="p-dot" style="background:#888;"></span> Twitter / X
           </button>
         </div>
@@ -1036,15 +1121,14 @@ def get_downloader_html() -> str:
       <div style="position:relative;">
 
         <div class="download-box" id="downloadBox">
-          <!-- FIX: form tag wraps input + submit so mobile keyboard Go button works -->
           <form class="input-area" onsubmit="onFormSubmit(event)">
             <label class="input-label" for="urlInput">Video link</label>
             <div class="input-row">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-xlo);flex-shrink:0;">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-subtle);flex-shrink:0;">
                 <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
               </svg>
               <input
-                type="url"
+                type="text"
                 id="urlInput"
                 class="url-input"
                 placeholder="Paste a YouTube, TikTok, or Instagram link"
@@ -1071,24 +1155,24 @@ def get_downloader_html() -> str:
             <!-- Auto-detected platform badge -->
             <div class="detected-badge" id="detectedBadge">
               <span class="detected-dot" id="detectedDot"></span>
-              <span id="detectedName" style="font-size:11px;font-weight:600;color:var(--text-lo);"></span>
+              <span id="detectedName"></span>
             </div>
 
-            <!-- CTA button — type="submit" triggers form onsubmit -->
+            <!-- CTA button -->
             <button type="submit" id="btnSubmit" class="btn-submit">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
-              Get Download Links
+              <span>Get Download Links</span>
             </button>
           </form>
 
           <div class="input-footer">
             <span class="hint-text">YouTube, Shorts, TikTok, Instagram, Twitter</span>
-            <button class="btn-try" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">Try an example</button>
+            <button class="btn-try" type="button" onclick="tryUrl('https://youtube.com/shorts/nUgWZ37u9fY')">Try an example</button>
           </div>
 
-          <!-- Error panel (inside box) -->
+          <!-- Error panel -->
           <div class="error-panel" id="errorPanel">
             <div class="error-icon">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1097,15 +1181,15 @@ def get_downloader_html() -> str:
             </div>
             <div>
               <div id="errorText">Something went wrong. Please check the link and try again.</div>
-              <button class="retry-link" onclick="run()">Try again</button>
+              <button class="retry-link" type="button" onclick="run()">Try again</button>
             </div>
           </div>
 
-          <!-- Skeleton loading panel (inside box) -->
+          <!-- Skeleton loading panel -->
           <div class="loading-wrap" id="loadingWrap">
             <div class="loading-step">
               <div class="step-spin"></div>
-              <span id="stepText">Fetching video info…</span>
+              <span id="stepText">Checking link &amp; cache…</span>
             </div>
             <div class="skel skel-thumb"></div>
             <div class="skel skel-line w80"></div>
@@ -1117,33 +1201,32 @@ def get_downloader_html() -> str:
           </div>
         </div>
 
-        <!-- FIX: History dropdown is OUTSIDE download-box so it's not clipped.
-             Absolutely positioned relative to parent div (position:relative) -->
+        <!-- History dropdown -->
         <div class="history-panel" id="historyPanel">
-          <div class="history-title">Recent</div>
+          <div class="history-title">Recent Searches</div>
         </div>
 
-      </div><!-- /position:relative wrapper -->
-    </div><!-- /hero-wrap -->
+      </div>
+    </div>
 
     <!-- Results -->
     <div class="results-wrap" id="resultsWrap">
 
       <div class="media-row">
         <div class="thumb-frame">
-          <img id="thumbImg" src="" alt="thumbnail">
+          <img id="thumbImg" src="" alt="thumbnail" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'320\\' height=\\'180\\' fill=\\'%231d1d22\\'><rect width=\\'320\\' height=\\'180\\'/></svg>'">
           <div class="thumb-dur" id="thumbDur"></div>
         </div>
         <div class="media-details">
           <h2 class="video-title" id="videoTitle">Video</h2>
           <div class="quick-row">
-            <button class="btn-primary" id="btnBestVideo" onclick="dlBest()">
+            <button class="btn-primary" id="btnBestVideo" type="button" onclick="dlBest()">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
               Save best quality
             </button>
-            <button class="btn-ghost" onclick="dlMp3()">
+            <button class="btn-ghost" type="button" onclick="dlMp3()">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
               </svg>
@@ -1155,14 +1238,14 @@ def get_downloader_html() -> str:
 
       <div class="tabs-bar">
         <div class="tab-grp">
-          <button class="tab active" id="tabV" onclick="setTab('video')">
+          <button class="tab active" id="tabV" type="button" onclick="setTab('video')">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
             </svg>
             Video
             <span class="tab-count" id="cntV">0</span>
           </button>
-          <button class="tab" id="tabA" onclick="setTab('audio')">
+          <button class="tab" id="tabA" type="button" onclick="setTab('audio')">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M9 19V6l12-3v13"/>
             </svg>
@@ -1214,13 +1297,13 @@ def get_downloader_html() -> str:
       <div class="sticky-sub"  id="stickySub">Ready to download</div>
     </div>
     <div class="sticky-btns">
-      <button class="sticky-btn-p" onclick="dlSelected()">
+      <button class="sticky-btn-p" type="button" onclick="dlSelected()">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
           <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
         Download
       </button>
-      <button class="sticky-btn-s" onclick="dlMp3()">
+      <button class="sticky-btn-s" type="button" onclick="dlMp3()">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
           <path d="M9 19V6l12-3v13"/>
         </svg>
@@ -1233,13 +1316,16 @@ def get_downloader_html() -> str:
 
   <script>
     /* ============================================================
-       STATE
+       STATE & VALIDATION CONTROLLERS
     ============================================================ */
-    let currentUrl      = "";
-    let selectedQuality = null;
-    let selectedType    = "video";
-    let bestVideoUrl    = "";   // FIX: store actual best quality URL
-    let bestAudioUrl    = "";
+    let currentUrl       = "";
+    let selectedQuality  = null;
+    let selectedType     = "video";
+    let bestVideoUrl     = "";
+    let bestAudioUrl     = "";
+    let isExtracting     = false;
+    let lastRenderedUrl  = "";
+    let lastRenderedTime = 0;
 
     const HISTORY_KEY = "downify_history";
     const MAX_HIST    = 5;
@@ -1267,13 +1353,12 @@ def get_downloader_html() -> str:
         btn.className = 'history-item';
         btn.type = 'button';
         btn.innerHTML = `
-          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/>
           </svg>
           <span class="history-url">${esc(url)}</span>
         `;
         btn.onmousedown = (e) => {
-          // FIX: use mousedown (fires before blur) so item click registers
           e.preventDefault();
           document.getElementById('urlInput').value = url;
           onType(url);
@@ -1311,7 +1396,7 @@ def get_downloader_html() -> str:
 
       const badge = document.getElementById('detectedBadge');
       const p = detectPlatform(val);
-      if (p && val.startsWith('http')) {
+      if (p && (val.startsWith('http') || val.includes('.'))) {
         document.getElementById('detectedDot').style.background = p.color;
         document.getElementById('detectedName').textContent = p.name + ' detected';
         badge.classList.add('show');
@@ -1333,7 +1418,6 @@ def get_downloader_html() -> str:
       if (!val) renderHistory();
     }
 
-    // FIX: increased blur delay to 240ms so mousedown on history item fires first
     function onBlurInput() {
       setTimeout(() => {
         document.getElementById('historyPanel').classList.remove('open');
@@ -1346,7 +1430,7 @@ def get_downloader_html() -> str:
         if (text && text.trim()) {
           document.getElementById('urlInput').value = text.trim();
           onType(text.trim());
-          toast("Link pasted");
+          toast("Link pasted from clipboard");
           run();
         }
       } catch {
@@ -1360,10 +1444,21 @@ def get_downloader_html() -> str:
       run();
     }
 
-    // FIX: form onsubmit handler prevents page reload
+    function focusWithPlatform(platformName) {
+      const inp = document.getElementById('urlInput');
+      inp.focus();
+      toast("Paste your " + platformName + " link to download");
+    }
+
     function onFormSubmit(e) {
       e.preventDefault();
       run();
+    }
+
+    function showInlineError(msg) {
+      document.getElementById('errorText').textContent = msg;
+      document.getElementById('errorPanel').style.display = 'flex';
+      document.getElementById('errorPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     /* ============================================================
@@ -1377,14 +1472,47 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       MAIN EXTRACTION
+       MAIN EXTRACTION (With Client Validation & Duplicate Block)
     ============================================================ */
     async function run() {
-      const url = document.getElementById('urlInput').value.trim();
-      if (!url) { document.getElementById('urlInput').focus(); return; }
+      let rawUrl = document.getElementById('urlInput').value.trim();
+      if (!rawUrl) { document.getElementById('urlInput').focus(); return; }
 
-      currentUrl = url;
-      pushHistory(url);
+      // Auto-prepend https:// if omitted
+      if (!/^https?:\\/\\//i.test(rawUrl)) {
+        rawUrl = "https://" + rawUrl;
+        document.getElementById('urlInput').value = rawUrl;
+      }
+
+      // 1. Client-Side Validation
+      try {
+        const parsed = new URL(rawUrl);
+        if (!parsed.hostname || !parsed.hostname.includes('.')) {
+          showInlineError("Please enter a valid video link with a domain name (e.g. YouTube, TikTok, Instagram).");
+          return;
+        }
+      } catch (err) {
+        showInlineError("Invalid URL. Please enter a valid web link.");
+        return;
+      }
+
+      // 2. Prevent Duplicate Burst while in-flight
+      if (isExtracting) {
+        toast("Extraction already in progress. Please wait…");
+        return;
+      }
+
+      // 3. Prevent Duplicate Request if same video is already loaded below
+      const now = Date.now();
+      if (lastRenderedUrl === rawUrl && (now - lastRenderedTime < 300000) && document.getElementById('resultsWrap').style.display !== 'none') {
+        toast("Video already loaded below");
+        document.getElementById('resultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      isExtracting = true;
+      currentUrl = rawUrl;
+      pushHistory(rawUrl);
       document.getElementById('historyPanel').classList.remove('open');
 
       const loadW   = document.getElementById('loadingWrap');
@@ -1392,7 +1520,6 @@ def get_downloader_html() -> str:
       const resW    = document.getElementById('resultsWrap');
       const bar     = document.getElementById('stickyBar');
       const btn     = document.getElementById('btnSubmit');
-      const featW   = document.getElementById('featuresWrap');
       const stepTx  = document.getElementById('stepText');
 
       errP.style.display  = 'none';
@@ -1400,14 +1527,15 @@ def get_downloader_html() -> str:
       bar.style.display   = 'none';
       loadW.style.display = 'block';
       btn.disabled        = true;
+      btn.innerHTML       = '<span class="step-spin" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span> Extracting…';
 
-      const steps = ["Fetching video info…", "Reading available qualities…", "Almost ready…"];
+      const steps = ["Checking link & cache…", "Resolving video streams…", "Almost ready…"];
       let si = 0;
       stepTx.textContent = steps[0];
       const stTimer = setInterval(() => { si = (si+1) % steps.length; stepTx.textContent = steps[si]; }, 1800);
 
       try {
-        const res  = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+        const res  = await fetch(`/api/info?url=${encodeURIComponent(rawUrl)}`);
         const data = await res.json();
         clearInterval(stTimer);
 
@@ -1415,18 +1543,24 @@ def get_downloader_html() -> str:
           throw new Error(data.detail || data.message || 'Could not read this video link.');
         }
 
+        lastRenderedUrl = rawUrl;
+        lastRenderedTime = Date.now();
         loadW.style.display = 'none';
-        featW.style.display = 'none';
-        render(data, url);
+        render(data, rawUrl);
 
       } catch (err) {
         clearInterval(stTimer);
         loadW.style.display = 'none';
-        document.getElementById('errorText').textContent =
-          err.message || 'Something went wrong. Please check the link and try again.';
-        errP.style.display = 'flex';
+        showInlineError(err.message || 'Something went wrong. Please check the link and try again.');
       } finally {
+        isExtracting = false;
         btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Get Download Links</span>
+        `;
       }
     }
 
@@ -1445,7 +1579,6 @@ def get_downloader_html() -> str:
       document.getElementById('cntV').textContent = videos.length;
       document.getElementById('cntA').textContent = audios.length;
 
-      // FIX: store actual best-quality URLs instead of sending "best"
       bestVideoUrl = videos.length
         ? `/api/stream?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(videos[0].quality || 'best')}`
         : '';
@@ -1460,7 +1593,6 @@ def get_downloader_html() -> str:
       document.getElementById('resultsWrap').style.display = 'block';
       document.getElementById('stickyBar').style.display   = 'flex';
 
-      // Sticky thumbnail
       const st = document.getElementById('stickyThumb');
       if (thumbSrc) { st.src = thumbSrc; st.classList.add('show'); }
 
@@ -1474,7 +1606,6 @@ def get_downloader_html() -> str:
         const streamUrl = `/api/stream?url=${encodeURIComponent(url)}&type=${type}&quality=${encodeURIComponent(item.quality || 'best')}`;
         const isBest    = i === 0;
 
-        // FIX: Smarter quality display for audio vs video
         const rawQ  = String(item.quality || (type === 'audio' ? '320kbps' : 'HD'));
         let   qNum, qUnit, qSub;
 
@@ -1483,7 +1614,6 @@ def get_downloader_html() -> str:
           qUnit = /^[0-9]+$/.test(qNum) ? 'p' : '';
           qSub  = 'Video quality';
         } else {
-          // For audio: "320kbps" -> show "320" large + "kbps" small
           const kbpsMatch = rawQ.match(/([0-9]+)[ ]*kbps/i);
           if (kbpsMatch) {
             qNum  = kbpsMatch[1];
@@ -1503,7 +1633,6 @@ def get_downloader_html() -> str:
         card.style.setProperty('--i', i);
         card.onclick = () => pick(item, type, card);
 
-        // Label for download button
         const dlLabel = type === 'audio'
           ? `Save ${qNum}${qUnit} MP3`
           : `Save ${qNum}${qUnit}`;
@@ -1559,7 +1688,6 @@ def get_downloader_html() -> str:
       go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=${type}&quality=${encodeURIComponent(q)}`);
     }
 
-    // FIX: use stored bestVideoUrl (actual first quality) instead of "best"
     function dlBest() {
       if (!bestVideoUrl) return;
       go(bestVideoUrl);
@@ -1570,8 +1698,6 @@ def get_downloader_html() -> str:
       go(bestAudioUrl);
     }
 
-    // FIX: use hidden <a> tag instead of window.location.href
-    // This avoids browser history pollution and doesn't "navigate away"
     function go(url) {
       toast("Download starting…");
       const a = document.getElementById('dlAnchor');
@@ -1580,7 +1706,7 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       HELPERS
+       HELPERS & EVENT LISTENERS
     ============================================================ */
     function fmtSize(bytes) {
       if (!bytes || isNaN(bytes) || bytes === 0) return '';
@@ -1612,6 +1738,21 @@ def get_downloader_html() -> str:
         setTimeout(() => el.remove(), 260);
       }, 3000);
     }
+
+    // Keyboard & Outside Click Listeners
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('historyPanel').classList.remove('open');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('historyPanel');
+      const box = document.getElementById('downloadBox');
+      if (panel && box && panel.classList.contains('open') && !box.contains(e.target) && !panel.contains(e.target)) {
+        panel.classList.remove('open');
+      }
+    });
   </script>
 </body>
 </html>"""
