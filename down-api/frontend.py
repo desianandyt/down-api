@@ -4,6 +4,9 @@ def get_downloader_html() -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Downify — Save Any Video or Audio</title>
   <meta name="description" content="Paste any video link and download it instantly. YouTube, Shorts, TikTok, Instagram Reels, and Twitter supported. Free, fast, no sign-up required.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -182,6 +185,11 @@ def get_downloader_html() -> str:
       gap: 64px;
       align-items: start;
     }
+    .hero-wrap > div {
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+    }
 
     .hero-eyebrow {
       display: inline-flex;
@@ -259,10 +267,15 @@ def get_downloader_html() -> str:
        DOWNLOAD BOX
     ============================================================ */
     .download-box {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       background: var(--bg-raised);
       border: 1px solid var(--line);
       border-radius: var(--r-xl);
       position: relative;
+      overflow: hidden;
       transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
     }
     .download-box:focus-within {
@@ -271,6 +284,10 @@ def get_downloader_html() -> str:
     }
 
     .input-area {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       padding: 16px 16px 10px;
     }
 
@@ -289,6 +306,10 @@ def get_downloader_html() -> str:
       display: flex;
       align-items: center;
       gap: 8px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       background: var(--bg);
       border: 1px solid var(--line);
       border-radius: var(--r-md);
@@ -301,14 +322,17 @@ def get_downloader_html() -> str:
     }
 
     .url-input {
-      flex: 1;
+      width: 0;
+      flex: 1 1 0;
       min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
       background: transparent;
       border: none;
       outline: none;
       color: var(--text-hi);
       font-family: var(--font-body);
-      font-size: 14px;
+      font-size: 15px;
       caret-color: var(--text-hi);
     }
     .url-input::placeholder { color: var(--text-subtle); }
@@ -349,6 +373,8 @@ def get_downloader_html() -> str:
       justify-content: center;
       gap: 8px;
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       padding: 14px;
       margin-top: 10px;
       background: var(--text-hi);
@@ -371,6 +397,9 @@ def get_downloader_html() -> str:
     }
 
     .input-footer {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       padding: 10px 16px 14px;
       display: flex;
       align-items: center;
@@ -383,6 +412,10 @@ def get_downloader_html() -> str:
       font-family: var(--font-body);
       font-size: 12px;
       color: var(--text-subtle);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .btn-try {
       font-family: var(--font-body);
@@ -1217,7 +1250,7 @@ def get_downloader_html() -> str:
       </div>
 
       <!-- Right column: Download box -->
-      <div style="position:relative;">
+      <div style="position:relative; width:100%; max-width:100%; min-width:0;">
 
         <div class="download-box" id="downloadBox">
           <form class="input-area" onsubmit="onFormSubmit(event)">
@@ -1262,7 +1295,7 @@ def get_downloader_html() -> str:
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
-              <span>Get Download Links</span>
+              <span>Download</span>
             </button>
           </form>
 
@@ -1658,7 +1691,7 @@ def get_downloader_html() -> str:
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
-          <span>Get Download Links</span>
+          <span>Download</span>
         `;
       }
     }

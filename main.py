@@ -268,14 +268,24 @@ def home(request: Request):
                 "GET /docs": "Interactive Swagger UI"
             }
         }
-    return HTMLResponse(get_downloader_html())
+    no_cache_headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    return HTMLResponse(content=get_downloader_html(), headers=no_cache_headers)
 
 
 @app.get("/app", response_class=HTMLResponse)
 @app.get("/downloader", response_class=HTMLResponse)
 def web_downloader():
     """Universal Web Downloader User Interface."""
-    return get_downloader_html()
+    no_cache_headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    return HTMLResponse(content=get_downloader_html(), headers=no_cache_headers)
 
 
 # --- Logs Endpoints ---
