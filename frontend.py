@@ -8,28 +8,28 @@ def get_downloader_html() -> str:
   <meta name="description" content="Paste any video link and download it instantly. YouTube, Shorts, TikTok, Instagram Reels, and Twitter supported. Free, fast, no sign-up required.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700;800&family=Inter:wght@400;450;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* ============================================================
        DESIGN TOKENS & TYPOGRAPHY SYSTEM
        - Display / Headings: Geist (Bold, geometric, clean)
-       - Body / Paragraphs:  Plus Jakarta Sans (Legible, warm, optical clarity)
+       - Body / Paragraphs:  Inter + Plus Jakarta Sans (World-class legibility)
        - Contrast: Calibrated WCAG AA compliant contrast for all body text
     ============================================================ */
     :root {
-      --bg:          #0a0a0c;
-      --bg-raised:   #141417;
-      --bg-elevated: #1d1d22;
-      --bg-hover:    #25252b;
+      --bg:          #09090b;
+      --bg-raised:   #131316;
+      --bg-elevated: #18181b;
+      --bg-hover:    #27272a;
       --line:        rgba(255,255,255,0.08);
-      --line-strong: rgba(255,255,255,0.16);
+      --line-strong: rgba(255,255,255,0.15);
       --line-focus:  rgba(255,255,255,0.32);
 
-      --text-hi:     #ffffff;
-      --text-body:   #d8d8de;       /* Warm readable light zinc for all paragraphs */
-      --text-muted:  #a6a6b0;       /* Readable secondary */
-      --text-subtle: #797985;       /* Crisp tertiary for hints/fine-print */
+      --text-hi:     #fafafa;
+      --text-body:   #e4e4e7;       /* Crisp zinc-200, highly readable on OLED & LCD */
+      --text-muted:  #a1a1aa;       /* Balanced zinc-400 */
+      --text-subtle: #71717a;       /* Sharp zinc-500 */
 
       --success:     #4ade80;
       --danger:      #f87171;
@@ -42,7 +42,7 @@ def get_downloader_html() -> str:
       --r-pill:      999px;
 
       --font-display: 'Geist', system-ui, -apple-system, sans-serif;
-      --font-body:    'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-body:    'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono:    'Geist Mono', ui-monospace, monospace;
 
       --ease:        cubic-bezier(0.16, 1, 0.3, 1);
@@ -209,13 +209,13 @@ def get_downloader_html() -> str:
     }
     .hero-sub {
       font-family: var(--font-body);
-      font-size: 15.5px;
+      font-size: 15px;
       font-weight: 400;
       color: var(--text-body);
-      line-height: 1.7;
-      letter-spacing: -0.15px;
+      line-height: 1.65;
+      letter-spacing: -0.01em;
       margin-bottom: 28px;
-      max-width: 40ch;
+      max-width: 480px;
     }
 
     .platform-grid {
@@ -930,6 +930,7 @@ def get_downloader_html() -> str:
       font-weight: 400;
       color: var(--text-muted);
       line-height: 1.65;
+      letter-spacing: -0.01em;
     }
 
     footer {
@@ -1020,7 +1021,8 @@ def get_downloader_html() -> str:
     }
 
     @media (max-width: 640px) {
-      .results-wrap { padding: 0 16px; }
+      .url-input { font-size: 16px; } /* Prevents iOS Safari auto-zoom on input tap */
+      .results-wrap { padding: 0 16px 120px; }
 
       .media-row { flex-direction: column; gap: 14px; padding: 16px; }
       .thumb-frame { width: 100%; min-width: 0; }
@@ -1694,15 +1696,27 @@ def get_downloader_html() -> str:
     }
 
     function dlMp3() {
-      if (!bestAudioUrl) return;
+      if (!bestAudioUrl) {
+        if (currentUrl) {
+          go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=audio&quality=best`);
+          return;
+        }
+        toast("Audio track not available");
+        return;
+      }
       go(bestAudioUrl);
     }
 
     function go(url) {
       toast("Download starting…");
-      const a = document.getElementById('dlAnchor');
+      const a = document.createElement('a');
       a.href = url;
+      a.setAttribute('download', '');
+      a.setAttribute('rel', 'noopener noreferrer');
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      setTimeout(() => a.remove(), 1200);
     }
 
     /* ============================================================

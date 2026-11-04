@@ -8,7 +8,7 @@ from collections import deque
 from typing import Optional, Dict, Any, Tuple
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse
 from pydantic import BaseModel
 import requests
 import urllib3
@@ -500,7 +500,8 @@ def _run_vidssave_info(target_url: str):
         "duration": vs_data.get("duration"),
         "thumbnail": vs_data.get("thumbnail"),
         "videos": videos,
-        "audios": audios
+        "audios": audios,
+        "_raw_resources": resources
     }
 
 
@@ -639,11 +640,19 @@ def post_info(request: Request, req: MediaInfoRequest):
 
 
 def _run_vidssave_download(target_url: str, media_type: str = "video", quality: str = "best", output_format: Optional[str] = None):
-    vs_data = vidssave.parse_media(target_url)
-    resources = vs_data.get("resources", [])
-    title = vs_data.get("title", "download")
-    thumbnail = vs_data.get("thumbnail")
-    duration = vs_data.get("duration")
+    # Reuse parsed resources from cache if available to prevent redundant scraping & risk checks
+    cached = media_cache.get(target_url)
+    if cached and cached.get("engine") == "vidssave" and cached.get("_raw_resources"):
+        resources = cached["_raw_resources"]
+        title = cached.get("title", "download")
+        thumbnail = cached.get("thumbnail")
+        duration = cached.get("duration")
+    else:
+        vs_data = vidssave.parse_media(target_url)
+        resources = vs_data.get("resources", [])
+        title = vs_data.get("title", "download")
+        thumbnail = vs_data.get("thumbnail")
+        duration = vs_data.get("duration")
 
     matching_resources = [r for r in resources if r.get("type") == media_type]
     if not matching_resources:
@@ -856,14 +865,22 @@ def stream_media(
                 logger.warning(f"Fallback proxy stream fetch failed: {e}")
                 r = None
 
-    # 3. Final emergency fallback: try plain generic headers directly
+    # 3. Emergency fallback: try plain generic headers directly
     if r is None:
         try:
             simple_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-            r = requests.get(direct_url, headers=simple_headers, stream=True, timeout=25, verify=False)
-            r.raise_for_status()
+            r = requests.get(direct_url, headers=simple_headers, stream=True, timeout=15, verify=False)
+            if r.status_code != 200:
+                r = None
         except Exception as e:
-            raise HTTPException(status_code=502, detail=f"Failed to stream media: {e}")
+            logger.warning(f"Generic header stream fetch failed: {e}")
+            r = None
+
+    # 4. If server stream proxying was blocked by origin/CDN (e.g. 403 Forbidden on datacenter IP),
+    # seamlessly redirect client browser directly to the media URL so browser downloads natively!
+    if r is None or getattr(r, 'status_code', None) != 200:
+        logger.info(f"Server-side proxy fetch was blocked/failed for {target_host}. Seamlessly redirecting client to origin...")
+        return RedirectResponse(url=direct_url, status_code=307)
 
     # Build RFC 6266 safe ASCII filename & UTF-8 encoded filename to avoid latin-1 header crashes
     raw_title = str(dl_info.get("title") or "media").strip()
