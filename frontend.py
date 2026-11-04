@@ -1,5 +1,5 @@
 def get_downloader_html() -> str:
-    return """<!DOCTYPE html>
+    return r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -733,6 +733,10 @@ def get_downloader_html() -> str:
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 10px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
     }
 
     .format-card {
@@ -744,6 +748,10 @@ def get_downloader_html() -> str:
       display: flex;
       flex-direction: column;
       gap: 12px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
       transition: border-color 0.2s, background 0.2s;
       animation: card-in 0.4s var(--ease) both;
       animation-delay: calc(var(--i, 0) * 50ms);
@@ -818,6 +826,9 @@ def get_downloader_html() -> str:
 
     .btn-card-dl {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1120,8 +1131,11 @@ def get_downloader_html() -> str:
       }
 
       .sticky-bar {
+        position: fixed !important;
+        bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
+        margin: 0 !important;
         width: 100% !important;
         max-width: 100vw !important;
         border-left: none !important;
@@ -1132,6 +1146,7 @@ def get_downloader_html() -> str:
         flex-direction: column !important;
         align-items: stretch !important;
         box-sizing: border-box !important;
+        overflow: hidden !important;
       }
       .sticky-thumb {
         display: none !important;
@@ -1142,27 +1157,37 @@ def get_downloader_html() -> str:
         align-items: center;
         width: 100%;
         min-width: 0;
+        box-sizing: border-box;
       }
       .sticky-title {
         font-size: 12.5px;
         max-width: 65%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .sticky-sub {
         font-size: 11px;
         margin-top: 0;
+        white-space: nowrap;
       }
       .sticky-btns {
         width: 100% !important;
         display: flex !important;
         gap: 8px !important;
+        box-sizing: border-box !important;
       }
       .sticky-btn-p, .sticky-btn-s {
         flex: 1 1 0 !important;
         min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         justify-content: center !important;
         padding: 10px 8px !important;
         font-size: 13px !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       .features-inner {
@@ -1604,7 +1629,190 @@ def get_downloader_html() -> str:
     }
 
     /* ============================================================
-       MAIN EXTRACTION (With Client Validation & Duplicate Block)
+       CLIENT-SIDE BACKGROUND FALLBACK ENGINE
+       (Bypasses server blocks/proxies by extracting on user device)
+    ============================================================ */
+    function extractYouTubeId(url) {
+      if (!url) return null;
+      const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|live\/|watch\?.+&v=))([\w-]{11})/i);
+      return m ? m[1] : null;
+    }
+
+    function fmtDur(seconds) {
+      if (!seconds || isNaN(seconds)) return '';
+      const s = parseInt(seconds, 10);
+      const m = Math.floor(s / 60);
+      const remS = s % 60;
+      if (m < 60) {
+        return `${m}:${remS < 10 ? '0' : ''}${remS}`;
+      }
+      const h = Math.floor(m / 60);
+      const remM = m % 60;
+      return `${h}:${remM < 10 ? '0' : ''}${remM}:${remS < 10 ? '0' : ''}${remS}`;
+    }
+
+    async function clientSideFallback(rawUrl) {
+      const lc = rawUrl.toLowerCase();
+
+      // --- 1. TIKTOK CLIENT EXTRACTION ---
+      if (lc.includes('tiktok.com')) {
+        const resp = await fetch('https://www.tikwm.com/api/?url=' + encodeURIComponent(rawUrl), {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!resp.ok) throw new Error('TikTok network service response: ' + resp.status);
+        const res = await resp.json();
+        if (res.code !== 0 || !res.data) {
+          throw new Error(res.msg || 'TikTok link could not be parsed.');
+        }
+        const d = res.data;
+        const videos = [];
+        if (d.hdplay) {
+          videos.push({ quality: '1080p HD', format: 'mp4', size: d.hd_size || null, direct_url: d.hdplay });
+        }
+        if (d.play) {
+          videos.push({ quality: '720p (No Watermark)', format: 'mp4', size: d.size || null, direct_url: d.play });
+        }
+        if (d.wmplay) {
+          videos.push({ quality: '720p (Watermarked)', format: 'mp4', size: d.wm_size || null, direct_url: d.wmplay });
+        }
+        const audios = [];
+        if (d.music) {
+          audios.push({ quality: '320kbps', format: 'mp3', size: null, direct_url: d.music });
+        }
+
+        return {
+          status: 'success',
+          title: d.title || 'TikTok Video',
+          thumbnail: d.cover || d.origin_cover || '',
+          duration: fmtDur(d.duration),
+          platform: 'tiktok',
+          videos: videos,
+          audios: audios
+        };
+      }
+
+      // --- 2. YOUTUBE CLIENT EXTRACTION ---
+      const ytId = extractYouTubeId(rawUrl);
+      if (ytId) {
+        const instances = [
+          'https://yt.chocolatemoo53.com',
+          'https://invidious.jing.rocks',
+          'https://invidious.privacydev.net'
+        ];
+
+        let invData = null;
+        let lastErr = null;
+
+        for (const inst of instances) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const resp = await fetch(`${inst}/api/v1/videos/${ytId}`, {
+              signal: controller.signal,
+              headers: { 'Accept': 'application/json' }
+            });
+            clearTimeout(timeoutId);
+            if (resp.ok) {
+              invData = await resp.json();
+              if (invData && invData.title) break;
+            }
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+
+        if (!invData) {
+          throw new Error('YouTube direct streams unavailable. ' + (lastErr ? lastErr.message : ''));
+        }
+
+        const videos = [];
+        const seenV = new Set();
+
+        if (Array.isArray(invData.formatStreams)) {
+          invData.formatStreams.forEach(f => {
+            const q = f.qualityLabel || f.resolution || '720p';
+            if (f.url && !seenV.has(q)) {
+              seenV.add(q);
+              videos.push({
+                quality: q,
+                format: f.container || 'mp4',
+                size: f.size || null,
+                direct_url: f.url
+              });
+            }
+          });
+        }
+
+        if (Array.isArray(invData.adaptiveFormats)) {
+          invData.adaptiveFormats.forEach(f => {
+            if ((f.type || '').includes('video/mp4') || (f.type || '').includes('video/webm')) {
+              const q = f.qualityLabel || f.resolution;
+              if (q && f.url && !seenV.has(q)) {
+                seenV.add(q);
+                videos.push({
+                  quality: q,
+                  format: f.container || 'mp4',
+                  size: f.clen ? parseInt(f.clen, 10) : null,
+                  direct_url: f.url
+                });
+              }
+            }
+          });
+        }
+
+        videos.sort((a, b) => {
+          const numA = parseInt(String(a.quality).replace(/[^0-9]/g, '')) || 0;
+          const numB = parseInt(String(b.quality).replace(/[^0-9]/g, '')) || 0;
+          return numB - numA;
+        });
+
+        const audios = [];
+        const seenA = new Set();
+        if (Array.isArray(invData.adaptiveFormats)) {
+          invData.adaptiveFormats.forEach(f => {
+            if ((f.type || '').includes('audio/')) {
+              const kbps = Math.round((f.bitrate || 128000) / 1000);
+              const qKey = `${kbps}kbps`;
+              if (f.url && !seenA.has(qKey)) {
+                seenA.add(qKey);
+                audios.push({
+                  quality: qKey,
+                  format: f.container === 'm4a' ? 'm4a' : 'mp3',
+                  size: f.clen ? parseInt(f.clen, 10) : null,
+                  direct_url: f.url
+                });
+              }
+            }
+          });
+        }
+
+        audios.sort((a, b) => {
+          const numA = parseInt(String(a.quality).replace(/[^0-9]/g, '')) || 0;
+          const numB = parseInt(String(b.quality).replace(/[^0-9]/g, '')) || 0;
+          return numB - numA;
+        });
+
+        let thumb = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
+        if (Array.isArray(invData.videoThumbnails) && invData.videoThumbnails.length) {
+          thumb = invData.videoThumbnails[invData.videoThumbnails.length - 1].url || thumb;
+        }
+
+        return {
+          status: 'success',
+          title: invData.title || 'YouTube Video',
+          thumbnail: thumb,
+          duration: fmtDur(invData.lengthSeconds),
+          platform: 'youtube',
+          videos: videos,
+          audios: audios
+        };
+      }
+
+      throw new Error('Platform not supported for direct device extraction.');
+    }
+
+    /* ============================================================
+       MAIN EXTRACTION (With Client Fallback & Duplicate Block)
     ============================================================ */
     async function run() {
       let rawUrl = document.getElementById('urlInput').value.trim();
@@ -1666,35 +1874,57 @@ def get_downloader_html() -> str:
       stepTx.textContent = steps[0];
       const stTimer = setInterval(() => { si = (si+1) % steps.length; stepTx.textContent = steps[si]; }, 1800);
 
+      let data = null;
+
       try {
         const res  = await fetch(`/api/info?url=${encodeURIComponent(rawUrl)}`);
-        const data = await res.json();
-        clearInterval(stTimer);
+        const json = await res.json().catch(() => null);
 
-        if (!res.ok || data.status !== 'success') {
-          throw new Error(data.detail || data.message || 'Could not read this video link.');
+        if (res.ok && json && json.status === 'success') {
+          data = json;
+        } else {
+          throw new Error((json && (json.detail || json.message)) || 'Server extraction unavailable');
         }
-
-        lastRenderedUrl = rawUrl;
-        lastRenderedTime = Date.now();
-        loadW.style.display = 'none';
-        render(data, rawUrl);
-
-      } catch (err) {
-        clearInterval(stTimer);
-        loadW.style.display = 'none';
-        showInlineError(err.message || 'Something went wrong. Please check the link and try again.');
-      } finally {
-        isExtracting = false;
-        btn.disabled = false;
-        btn.innerHTML = `
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
-          <span>Download</span>
-        `;
+      } catch (serverErr) {
+        console.warn('Server extraction failed, initiating direct client fallback:', serverErr.message);
+        stepTx.textContent = "Connecting via direct device network…";
+        try {
+          data = await clientSideFallback(rawUrl);
+        } catch (clientErr) {
+          console.error('Client fallback failed:', clientErr);
+          clearInterval(stTimer);
+          loadW.style.display = 'none';
+          showInlineError(serverErr.message || clientErr.message || 'Could not extract video. Please check the link and try again.');
+          return;
+        }
       }
+
+      clearInterval(stTimer);
+      if (!data || data.status !== 'success') {
+        loadW.style.display = 'none';
+        showInlineError('Could not parse video streams.');
+        return;
+      }
+
+      lastRenderedUrl = rawUrl;
+      lastRenderedTime = Date.now();
+      loadW.style.display = 'none';
+      render(data, rawUrl);
+    } catch (err) {
+      clearInterval(stTimer);
+      loadW.style.display = 'none';
+      showInlineError(err.message || 'Something went wrong. Please check the link and try again.');
+    } finally {
+      isExtracting = false;
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        <span>Download</span>
+      `;
     }
+  }
 
     /* ============================================================
        RENDER RESULTS
@@ -1712,10 +1942,10 @@ def get_downloader_html() -> str:
       document.getElementById('cntA').textContent = audios.length;
 
       bestVideoUrl = videos.length
-        ? `/api/stream?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(videos[0].quality || 'best')}`
+        ? (videos[0].direct_url || `/api/stream?url=${encodeURIComponent(url)}&type=video&quality=${encodeURIComponent(videos[0].quality || 'best')}`)
         : '';
       bestAudioUrl = audios.length
-        ? `/api/stream?url=${encodeURIComponent(url)}&type=audio&quality=${encodeURIComponent(audios[0].quality || 'best')}`
+        ? (audios[0].direct_url || `/api/stream?url=${encodeURIComponent(url)}&type=audio&quality=${encodeURIComponent(audios[0].quality || 'best')}`)
         : '';
 
       buildGrid(document.getElementById('videoGrid'), videos, 'video', url);
@@ -1735,7 +1965,7 @@ def get_downloader_html() -> str:
     function buildGrid(grid, items, type, url) {
       grid.innerHTML = '';
       items.forEach((item, i) => {
-        const streamUrl = `/api/stream?url=${encodeURIComponent(url)}&type=${type}&quality=${encodeURIComponent(item.quality || 'best')}`;
+        const streamUrl = item.direct_url ? item.direct_url : `/api/stream?url=${encodeURIComponent(url)}&type=${type}&quality=${encodeURIComponent(item.quality || 'best')}`;
         const isBest    = i === 0;
 
         const rawQ  = String(item.quality || (type === 'audio' ? '320kbps' : 'HD'));
@@ -1785,13 +2015,22 @@ def get_downloader_html() -> str:
               <b>${type === 'audio' ? 'MP3' : 'Included'}</b>
             </div>
           </div>
-          <button type="button" class="btn-card-dl" onclick="event.stopPropagation(); go('${streamUrl}')">
+          <button type="button" class="btn-card-dl">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
             ${esc(dlLabel)}
           </button>
         `;
+
+        const btnDl = card.querySelector('.btn-card-dl');
+        if (btnDl) {
+          btnDl.onclick = (e) => {
+            e.stopPropagation();
+            go(streamUrl);
+          };
+        }
+
         grid.appendChild(card);
         if (isBest) pick(item, type, card);
       });
@@ -1815,13 +2054,20 @@ def get_downloader_html() -> str:
 
     function dlSelected() {
       if (!currentUrl || !selectedQuality) return;
+      if (selectedQuality.direct_url) {
+        go(selectedQuality.direct_url);
+        return;
+      }
       const q    = selectedQuality.quality || 'best';
       const type = selectedType || 'video';
       go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=${type}&quality=${encodeURIComponent(q)}`);
     }
 
     function dlBest() {
-      if (!bestVideoUrl) return;
+      if (!bestVideoUrl) {
+        if (currentUrl) go(`/api/stream?url=${encodeURIComponent(currentUrl)}&type=video&quality=best`);
+        return;
+      }
       go(bestVideoUrl);
     }
 
@@ -1838,10 +2084,12 @@ def get_downloader_html() -> str:
     }
 
     function go(url) {
+      if (!url) return;
       toast("Download starting…");
       const a = document.createElement('a');
       a.href = url;
       a.setAttribute('download', '');
+      a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener noreferrer');
       a.style.display = 'none';
       document.body.appendChild(a);
