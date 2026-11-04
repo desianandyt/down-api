@@ -5,8 +5,11 @@ import subprocess
 import shutil
 import tempfile
 import requests
+import urllib3
 from typing import Any, Dict, List, Optional
 from proxy_manager import proxy_pool
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger("savefrom")
 
@@ -78,7 +81,7 @@ def extract_raw(url: str) -> Dict[str, Any]:
     msec = None
     proxies = proxy_pool.get_dict()
     try:
-        msec_res = requests.get("https://en1.savefrom.net/msec", headers={"User-Agent": "Mozilla/5.0"}, proxies=proxies, timeout=6)
+        msec_res = requests.get("https://en1.savefrom.net/msec", headers={"User-Agent": "Mozilla/5.0"}, proxies=proxies, timeout=6, verify=False)
         if msec_res.status_code == 200:
             msec = msec_res.json().get("msec")
     except Exception as e:
@@ -118,7 +121,7 @@ def extract_raw(url: str) -> Dict[str, Any]:
 
     for attempt, cur_proxies in enumerate(proxy_attempts):
         try:
-            resp = requests.post(worker_url, data=payload, headers=headers, proxies=cur_proxies, timeout=12)
+            resp = requests.post(worker_url, data=payload, headers=headers, proxies=cur_proxies, timeout=12, verify=False)
             text = resp.text
             if "/*js-response*/" in text:
                 # Successfully received encrypted JS response

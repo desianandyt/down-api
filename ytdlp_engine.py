@@ -13,6 +13,7 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
+        "nocheckcertificate": True,
         "extract_flat": False,
         "socket_timeout": 15,
         "geo_bypass": True,
@@ -22,7 +23,7 @@ def get_ytdlp_info(url: str) -> Dict[str, Any]:
         },
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "android_creator"]
+                "player_client": ["android", "ios", "mweb"]
             }
         }
     }

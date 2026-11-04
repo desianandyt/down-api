@@ -8,7 +8,10 @@ import urllib.parse
 from typing import Any, Dict, List, Optional
 from Crypto.Cipher import AES
 import requests
+import urllib3
 from proxy_manager import proxy_pool
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger("vidssave")
 
@@ -64,7 +67,7 @@ class CredentialsManager:
 
         logger.info("Fetching fresh credentials from vidssave.com...")
         try:
-            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, proxies=proxy_pool.get_dict(), timeout=10)
+            r = requests.get("https://vidssave.com/", headers=DEFAULT_HEADERS, proxies=proxy_pool.get_dict(), timeout=10, verify=False)
             if r.status_code != 200:
                 logger.warning(f"Could not load homepage: HTTP {r.status_code}")
                 return
@@ -75,7 +78,7 @@ class CredentialsManager:
             for chunk_url in chunks:
                 if any(k in chunk_url for k in ["1074", "6215", "layout", "page", "app"]):
                     try:
-                        js_text = requests.get(chunk_url, headers=DEFAULT_HEADERS, timeout=6).text
+                        js_text = requests.get(chunk_url, headers=DEFAULT_HEADERS, timeout=6, verify=False).text
 
                         # 1. auth code
                         m_auth = re.search(r'auth:[\"\'\`]([a-zA-Z0-9_\-]+)[\"\'\`]', js_text)
@@ -155,7 +158,7 @@ def _execute_parse(url: str) -> Dict[str, Any]:
         for ep in ENDPOINTS:
             parse_url = f"{ep['api_base']}/media/parse"
             try:
-                resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12)
+                resp = requests.post(parse_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12, verify=False)
                 if resp.status_code != 200:
                     continue
                 res_json = resp.json()
@@ -207,7 +210,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
         for ep in ENDPOINTS:
             download_url = f"{ep['api_base']}/media/download"
             try:
-                resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12)
+                resp = requests.post(download_url, data=payload, headers=DEFAULT_HEADERS, proxies=proxies, timeout=12, verify=False)
                 if resp.status_code != 200:
                     continue
                 res_json = resp.json()
@@ -235,7 +238,7 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
                     "Referer": DEFAULT_HEADERS["Referer"]
                 }
 
-                with requests.get(sse_url, headers=sse_headers, proxies=proxies, stream=True, timeout=timeout) as sse_resp:
+                with requests.get(sse_url, headers=sse_headers, proxies=proxies, stream=True, timeout=timeout, verify=False) as sse_resp:
                     for line in sse_resp.iter_lines():
                         if not line:
                             continue
@@ -252,7 +255,8 @@ def _execute_download(resource_content: str, output_format: Optional[str] = None
                                             headers={"User-Agent": DEFAULT_HEADERS["User-Agent"]},
                                             proxies=proxies,
                                             allow_redirects=False,
-                                            timeout=6
+                                            timeout=6,
+                                            verify=False
                                         )
                                         final_link = head_resp.headers.get("Location") or redirect_link
                                     except Exception:

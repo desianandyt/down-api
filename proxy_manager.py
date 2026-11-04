@@ -5,6 +5,9 @@ import threading
 import concurrent.futures
 from typing import Dict, List, Optional
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger("proxy_manager")
 
@@ -57,12 +60,12 @@ class ProxyPool:
     def _background_refresh_free_proxies(self):
         """Fetches and validates free public proxies in parallel for emergency cloud fallback."""
         try:
-            r = requests.get("https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt", timeout=6)
+            r = requests.get("https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt", timeout=6, verify=False)
             candidates = [f"http://{p.strip()}" for p in r.text.splitlines() if p.strip()][:35]
 
             def check_p(p):
                 try:
-                    res = requests.get("https://httpbin.org/ip", proxies={"http": p, "https": p}, timeout=2)
+                    res = requests.get("https://httpbin.org/ip", proxies={"http": p, "https": p}, timeout=2.5, verify=False)
                     if res.status_code == 200:
                         return p
                 except Exception:

@@ -9,6 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import vidssave
 import ytdlp_engine
@@ -622,29 +625,62 @@ def stream_media(
     if not direct_url:
         raise HTTPException(status_code=404, detail="Could not obtain direct streaming URL")
 
+    target_host = urllib.parse.urlparse(direct_url).netloc.lower()
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Referer": "https://vidssave.com/",
-        "Origin": "https://vidssave.com"
     }
+    if "vidssave" in target_host:
+        headers["Referer"] = "https://vidssave.com/"
+        headers["Origin"] = "https://vidssave.com"
+    elif "googlevideo.com" in target_host or "youtube.com" in target_host:
+        headers["Referer"] = "https://www.youtube.com/"
+    elif "tiktok" in target_host or "tikwm" in target_host:
+        headers["Referer"] = "https://www.tiktok.com/"
+    elif "instagram" in target_host:
+        headers["Referer"] = "https://www.instagram.com/"
+
+    r = None
+    # 1. Try direct stream fetch with appropriate referer
     try:
-        r = requests.get(direct_url, headers=headers, stream=True, timeout=20)
+        r = requests.get(direct_url, headers=headers, stream=True, timeout=25, verify=False)
         if r.status_code != 200 or "text/html" in r.headers.get("Content-Type", ""):
-            fallback_proxies = proxy_pool.get_fallback_dict()
-            if fallback_proxies:
-                r = requests.get(direct_url, headers=headers, proxies=fallback_proxies, stream=True, timeout=20)
-    except Exception:
+            r = None
+    except Exception as e:
+        logger.warning(f"Direct stream fetch failed for {target_host}: {e}")
+        r = None
+
+    # 2. If direct fails (e.g. IP-bound signed proxy link), try fallback proxy
+    if r is None:
         fallback_proxies = proxy_pool.get_fallback_dict()
         if fallback_proxies:
-            r = requests.get(direct_url, headers=headers, proxies=fallback_proxies, stream=True, timeout=20)
-        else:
-            raise
+            try:
+                r = requests.get(direct_url, headers=headers, proxies=fallback_proxies, stream=True, timeout=25, verify=False)
+                if r.status_code != 200:
+                    r = None
+            except Exception as e:
+                logger.warning(f"Fallback proxy stream fetch failed: {e}")
+                r = None
 
-    clean_title = "".join(c for c in dl_info.get("title", "media") if c.isalnum() or c in (" ", "-", "_")).strip()
+    # 3. Final emergency fallback: try plain generic headers directly
+    if r is None:
+        try:
+            simple_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            r = requests.get(direct_url, headers=simple_headers, stream=True, timeout=25, verify=False)
+            r.raise_for_status()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Failed to stream media: {e}")
+
+    # Build RFC 6266 safe ASCII filename & UTF-8 encoded filename to avoid latin-1 header crashes
+    raw_title = str(dl_info.get("title") or "media").strip()
+    clean_title = "".join(c for c in raw_title if c.isalnum() or c in (" ", "-", "_")).strip() or "media"
     quality_tag = dl_info.get("quality") or ("MP3" if type == "audio" else "HD")
-    ext = dl_info.get("format") or ("mp3" if type == "audio" else "mp4")
-    filename = f"{clean_title} - {quality_tag}.{ext.lower()}"
-    quoted_filename = urllib.parse.quote(filename)
+    ext = (dl_info.get("format") or ("mp3" if type == "audio" else "mp4")).lower()
+    
+    full_filename = f"{clean_title} - {quality_tag}.{ext}"
+    ascii_filename = "".join(c for c in full_filename if c.isascii() and c not in ('"', '\r', '\n', '\\')).strip()
+    if not ascii_filename:
+        ascii_filename = f"media - {quality_tag}.{ext}"
+    quoted_filename = urllib.parse.quote(full_filename)
 
     def iter_content():
         for chunk in r.iter_content(chunk_size=1024 * 64):
@@ -652,7 +688,7 @@ def stream_media(
                 yield chunk
 
     response_headers = {
-        "Content-Disposition": f"attachment; filename=\"{filename}\"; filename*=UTF-8''{quoted_filename}",
+        "Content-Disposition": f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{quoted_filename}",
         "Content-Type": r.headers.get("Content-Type", "application/octet-stream")
     }
     if "Content-Length" in r.headers:
